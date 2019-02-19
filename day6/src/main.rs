@@ -20,12 +20,8 @@ impl Point {
         (r as isize - self.r as isize).abs() as usize
             + (c as isize - self.c as isize).abs() as usize
     }
-    pub fn set_edge(&mut self, flag: bool) {
-        self.inf |= flag;
-    }
-    pub fn increment(&mut self) {
-        self.count += 1;
-    }
+    pub fn set_edge(&mut self, flag: bool) { self.inf |= flag; }
+    pub fn increment(&mut self) { self.count += 1; }
 }
 
 struct Plane {
@@ -34,15 +30,9 @@ struct Plane {
 }
 
 impl Plane {
-    pub fn new(w: usize, h: usize) -> Plane {
-        Plane { w, h }
-    }
-    pub fn height(&self) -> usize {
-        self.h
-    }
-    pub fn width(&self) -> usize {
-        self.w
-    }
+    pub fn new(w: usize, h: usize) -> Plane { Plane { w, h } }
+    pub fn height(&self) -> usize { self.h }
+    pub fn width(&self) -> usize { self.w }
     pub fn is_edge(&self, r: usize, c: usize) -> bool {
         r == 0 || c == 0 || r == self.height() - 1 || c == self.width() - 1
     }
@@ -51,15 +41,13 @@ impl Plane {
 fn main() {
     let mut points = Vec::new();
     let (mut w, mut h) = (0usize, 0usize);
-    for line in BufReader::new(std::io::stdin())
-        .lines()
-        .filter_map(|r| r.ok())
+    for line in BufReader::new(std::io::stdin()).lines().filter_map(|r| r.ok())
     {
         let (r, c): (usize, usize);
         scan!(line.bytes() => "{},{}", c, r);
         w = core::cmp::max(c, w);
         h = core::cmp::max(r, h);
-        points.push(Point::new(r, c, points.len() + 1))
+        points.push(Point::new(r, c, points.len()))
     }
 
     let plane = Plane::new(w + 1, h + 1);
@@ -72,12 +60,12 @@ fn main() {
             let mut mindist = usize::max_value();       // Dist of the current nearest Point
             let mut totaldist = 0;                      // Sum of distances to all Points
 
-            for (i, p) in points.iter().enumerate() {   // Loop over all points enumerating with indices
+            for p in &points {                          // Loop over all points enumerating with indices
                 let curdist = p.dist(r, c);             // Manhattan dist b/w cell and Point in question
                 totaldist += curdist;
                 if curdist < mindist {                  // Note this Point if nearer than current nearest
                     mindist = curdist;
-                    nearest = i;
+                    nearest = p.id;
                     border = false;
                 } else if curdist == mindist {          // Mark as border if cell is nearest to more than one Point
                     border = true;
@@ -96,10 +84,7 @@ fn main() {
         }
     }
 
-    let mut maxarea = 0;
-    for p in points.iter().filter(|p| !p.inf) {
-        maxarea = core::cmp::max(maxarea, p.count);
-    }
+    let maxarea = points.iter().filter(|p| !p.inf).map(|p| p.count).max().unwrap();
 
     println!("Part 1: {}, Part 2: {}", maxarea, goodregion);
 }
