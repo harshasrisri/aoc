@@ -11,5 +11,5 @@ fn main() {
         scan!(line.bytes() => "Step {} must be finished before step {} can begin.", src, dst);
         deps.add_edge (src, dst, deps.edge_count());
     }
-    println!("{:?}", Dot::with_config(&deps, &[Config::EdgeIndexLabel]));
+    println!("{:?}", Dot::with_config(&deps, &[Config::EdgeNoLabel]));
 }
