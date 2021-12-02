@@ -1,4 +1,7 @@
-use std::{fs::File, io::{BufRead, BufReader}};
+use std::{
+    fs::File,
+    io::{BufRead, BufReader},
+};
 
 fn day1() {
     let file = File::open("inputs/d01.txt").unwrap();
@@ -10,10 +13,8 @@ fn day1() {
         .filter_map(|line| line.parse::<usize>().ok())
         .collect::<Vec<_>>();
 
-    let d1p1 = data
-        .windows(2)
-        .filter(|w| w[0] < w[1])
-        .count();
+    let d1p1 = data.windows(2).filter(|w| w[0] < w[1]).count();
+    println!("Day 01, Part 1: {}", d1p1);
 
     let d1p2 = data
         .windows(3)
@@ -22,35 +23,48 @@ fn day1() {
         .windows(2)
         .filter(|w| w[0] < w[1])
         .count();
-
-
-    println!("{}, {}", d1p1, d1p2);
+    println!("Day 01, Part 2: {}", d1p2);
 }
 
 fn day2() {
     let file = File::open("inputs/d02.txt").unwrap();
     let reader = BufReader::new(file);
 
+    enum Command {
+        Forward(usize),
+        Downward(usize),
+        Upward(usize),
+        Invalid,
+    }
+
     let movements = reader
         .lines()
         .filter_map(|line| line.ok())
         .map(|line| {
             if let Some((dir, steps)) = line.split_once(' ') {
-                let steps = steps.parse::<isize>().unwrap();
+                let steps = steps.parse::<usize>().unwrap();
                 match dir {
-                    "forward" => (steps, 0),
-                    "down" => (0, steps),
-                    "up" => (0, -1 * steps),
-                    _ => (0, 0),
+                    "forward" => Command::Forward(steps),
+                    "down" => Command::Downward(steps),
+                    "up" => Command::Upward(steps),
+                    _ => Command::Invalid,
                 }
-            } else { (0,0) }
+            } else {
+                Command::Invalid
+            }
         })
-    .collect::<Vec<(isize, isize)>>();
+        .collect::<Vec<_>>();
 
-    let distance: isize = movements.iter().map(|t| t.0).sum();
-    let depth: isize  = movements.iter().map(|t| t.1).sum();
+    let (distance, depth) = movements
+        .iter()
+        .fold((0, 0), |(distance, depth), cmd| match cmd {
+            Command::Downward(n) => (distance, depth + n),
+            Command::Upward(n) => (distance, depth - n),
+            Command::Forward(n) => (distance + n, depth),
+            Command::Invalid => (distance, depth),
+        });
 
-    println!("{}, {}, {}", distance, depth, distance * depth);
+    println!("Day 02, Part 1: {}, {}, {}", distance, depth, distance * depth);
 }
 
 fn main() {
