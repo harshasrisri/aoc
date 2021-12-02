@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate text_io;
 extern crate petgraph;
-use petgraph::{Direction, graphmap::DiGraphMap};
+use petgraph::{graphmap::DiGraphMap, Direction};
 use std::io::{BufRead, BufReader};
 
 // Modified Kahn's algorithm borrowed from Wikipedia's Topological Sort entry
@@ -23,34 +23,43 @@ use std::io::{BufRead, BufReader};
 
 fn main() {
     let mut deps = DiGraphMap::new();
-    for line in BufReader::new(std::io::stdin()).lines().filter_map(|r| r.ok())
+    for line in BufReader::new(std::io::stdin())
+        .lines()
+        .filter_map(|r| r.ok())
     {
         let (src, dst): (char, char);
         scan!(line.bytes() => "Step {} must be finished before step {} can begin.", src, dst);
         deps.add_edge(src, dst, deps.edge_count());
     }
 
-    let mut no_inc: Vec<char> = deps.nodes()
+    let mut no_inc: Vec<char> = deps
+        .nodes()
         .filter(|&n| deps.neighbors_directed(n, Direction::Incoming).count() == 0)
         .collect();
 
-    no_inc.sort_by(|a,b| b.partial_cmp(&a).unwrap());
+    no_inc.sort_by(|a, b| b.partial_cmp(&a).unwrap());
 
     let mut sorted = Vec::new();
+    let mut time_taken = 0;
 
-    while !no_inc.is_empty() { 
+    while !no_inc.is_empty() {
         let n = no_inc.pop().unwrap();
+        time_taken += 60 + n as u32;
         sorted.push(n);
 
         for m in deps.clone().neighbors_directed(n, Direction::Outgoing) {
             deps.remove_edge(n, m);
             if deps.neighbors_directed(m, Direction::Incoming).count() == 0 {
                 no_inc.push(m);
-                no_inc.sort_by(|a,b| b.partial_cmp(&a).unwrap());
+                no_inc.sort_by(|a, b| b.partial_cmp(&a).unwrap());
             }
         }
     }
 
     assert_eq!(deps.all_edges().count(), 0);
-    println!("{}", sorted.into_iter().collect::<String>());
+    println!(
+        "{} in {} secs",
+        sorted.into_iter().collect::<String>(),
+        time_taken
+    );
 }
