@@ -65,6 +65,18 @@ fn day2() {
         });
 
     println!("Day 02, Part 1: {}, {}, {}", distance, depth, distance * depth);
+
+    let mut aim = 0;
+    let (distance, depth) = movements
+        .iter()
+        .fold((0, 0), |(distance, depth), cmd| match cmd {
+            Command::Downward(n) => { aim += n; (distance, depth) },
+            Command::Upward(n) => { aim -= n; (distance, depth) },
+            Command::Forward(n) => (distance + n, depth + (n * aim)),
+            Command::Invalid => (distance, depth),
+        });
+
+    println!("Day 02, Part 2: {}, {}, {}", distance, depth, distance * depth);
 }
 
 fn main() {
