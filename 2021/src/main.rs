@@ -1,6 +1,6 @@
 use std::{fs::File, io::{BufRead, BufReader}};
 
-fn main() {
+fn day1() {
     let file = File::open("inputs/d01.txt").unwrap();
     let reader = BufReader::new(file);
 
@@ -25,4 +25,8 @@ fn main() {
 
 
     println!("{}, {}", d1p1, d1p2);
+}
+
+fn main() {
+    day1();
 }
