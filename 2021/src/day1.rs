@@ -18,7 +18,7 @@ pub fn run(input: &'static str) -> (usize, usize) {
 }
 
 #[test]
-fn test() { 
+fn test() {
     let input = "199\n200\n208\n210\n200\n207\n240\n269\n260\n263";
     assert_eq!(run(input), (7, 5));
 }

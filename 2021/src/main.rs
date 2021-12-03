@@ -2,7 +2,7 @@ mod day1;
 mod day2;
 mod day3;
 
-fn fatal(s: &str) -> ! { 
+fn fatal(s: &str) -> ! {
     eprintln!("{}", s);
     std::process::exit(1);
 }

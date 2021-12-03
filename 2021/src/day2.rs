@@ -21,7 +21,7 @@ pub fn run(input: &'static str) -> (usize, usize) {
                 Command::Invalid
             }
         })
-    .collect::<Vec<_>>();
+        .collect::<Vec<_>>();
 
     let (distance, depth) = commands
         .iter()
@@ -49,7 +49,7 @@ pub fn run(input: &'static str) -> (usize, usize) {
 }
 
 #[test]
-fn test() { 
+fn test() {
     let input = "forward 5\ndown 5\nforward 8\nup 3\ndown 8\nforward 2";
     assert_eq!(run(input), (150, 900));
 }
