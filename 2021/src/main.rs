@@ -51,7 +51,12 @@ fn day2() {
             Command::Invalid => (distance, depth),
         });
 
-    println!("Day 02, Part 1: {}, {}, {}", distance, depth, distance * depth);
+    println!(
+        "Day 02, Part 1: {}, {}, {}",
+        distance,
+        depth,
+        distance * depth
+    );
 
     let (distance, depth, _aim) = commands
         .iter()
@@ -62,10 +67,54 @@ fn day2() {
             Command::Invalid => (distance, depth, aim),
         });
 
-    println!("Day 02, Part 2: {}, {}, {}", distance, depth, distance * depth);
+    println!(
+        "Day 02, Part 2: {}, {}, {}",
+        distance,
+        depth,
+        distance * depth
+    );
+}
+
+fn day3() {
+    let signals = include_str!("../inputs/d03.txt")
+        .lines()
+        .map(|bits| {
+            bits.chars()
+                .map(|bit| match bit {
+                    '0' => -1,
+                    '1' => 1,
+                    _ => panic!("invalid bit {}", bit),
+                })
+                .collect::<Vec<isize>>()
+        })
+        .fold(Vec::new(), |acc: Vec<isize>, signals| {
+            let acc = if acc.is_empty() {
+                vec![0; signals.len()]
+            } else {
+                acc
+            };
+            acc.iter().zip(signals.iter()).map(|(a, b)| a + b).collect()
+        });
+
+    let (gamma, epsilon) =
+        signals
+            .iter()
+            .fold((0, 0), |(gamma, epsilon), signal| match signal.cmp(&0) {
+                std::cmp::Ordering::Greater => ((gamma << 1) | 1, epsilon << 1),
+                std::cmp::Ordering::Less => (gamma << 1, (epsilon << 1) | 1),
+                std::cmp::Ordering::Equal => panic!("Not expecting 0 here"),
+            });
+
+    println!(
+        "Day 03, Part 1: {}, {}, {}",
+        gamma,
+        epsilon,
+        gamma * epsilon
+    );
 }
 
 fn main() {
     day1();
     day2();
+    day3();
 }
