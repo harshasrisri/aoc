@@ -1,15 +1,6 @@
-use std::{
-    fs::File,
-    io::{BufRead, BufReader},
-};
-
 fn day1() {
-    let file = File::open("inputs/d01.txt").unwrap();
-    let reader = BufReader::new(file);
-
-    let data = reader
+    let data = include_str!("../inputs/d01.txt")
         .lines()
-        .filter_map(|line| line.ok())
         .filter_map(|line| line.parse::<usize>().ok())
         .collect::<Vec<_>>();
 
@@ -27,9 +18,6 @@ fn day1() {
 }
 
 fn day2() {
-    let file = File::open("inputs/d02.txt").unwrap();
-    let reader = BufReader::new(file);
-
     enum Command {
         Forward(usize),
         Downward(usize),
@@ -37,9 +25,8 @@ fn day2() {
         Invalid,
     }
 
-    let movements = reader
+    let commands = include_str!("../inputs/d02.txt")
         .lines()
-        .filter_map(|line| line.ok())
         .map(|line| {
             if let Some((dir, steps)) = line.split_once(' ') {
                 let steps = steps.parse::<usize>().unwrap();
@@ -55,25 +42,24 @@ fn day2() {
         })
         .collect::<Vec<_>>();
 
-    let (distance, depth) = movements
+    let (distance, depth) = commands
         .iter()
         .fold((0, 0), |(distance, depth), cmd| match cmd {
-            Command::Downward(n) => (distance, depth + n),
-            Command::Upward(n) => (distance, depth - n),
-            Command::Forward(n) => (distance + n, depth),
+            Command::Downward(incr) => (distance, depth + incr),
+            Command::Upward(incr) => (distance, depth - incr),
+            Command::Forward(incr) => (distance + incr, depth),
             Command::Invalid => (distance, depth),
         });
 
     println!("Day 02, Part 1: {}, {}, {}", distance, depth, distance * depth);
 
-    let mut aim = 0;
-    let (distance, depth) = movements
+    let (distance, depth, _aim) = commands
         .iter()
-        .fold((0, 0), |(distance, depth), cmd| match cmd {
-            Command::Downward(n) => { aim += n; (distance, depth) },
-            Command::Upward(n) => { aim -= n; (distance, depth) },
-            Command::Forward(n) => (distance + n, depth + (n * aim)),
-            Command::Invalid => (distance, depth),
+        .fold((0, 0, 0), |(distance, depth, aim), cmd| match cmd {
+            Command::Downward(incr) => (distance, depth, aim + incr),
+            Command::Upward(incr) => (distance, depth, aim - incr),
+            Command::Forward(incr) => (distance + incr, depth + (incr * aim), aim),
+            Command::Invalid => (distance, depth, aim),
         });
 
     println!("Day 02, Part 2: {}, {}, {}", distance, depth, distance * depth);
