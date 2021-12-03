@@ -114,7 +114,12 @@ fn day3() {
 }
 
 fn main() {
-    day1();
-    day2();
-    day3();
+    let arg = std::env::args().skip(1).next().map(|arg| arg.parse::<isize>().ok()).flatten();
+    match arg {
+        Some(3) => day3(),
+        Some(2) => day2(),
+        Some(1) => day1(),
+        Some(arg) => eprintln!("{} - Not implemented", arg),
+        None => eprintln!("Invalid argument"),
+    }
 }
