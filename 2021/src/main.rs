@@ -76,34 +76,39 @@ fn day2() {
 }
 
 fn day3() {
-    let signals = include_str!("../inputs/d03.txt")
+    let input = include_str!("../inputs/d03.txt")
         .lines()
-        .map(|bits| {
-            bits.chars()
-                .map(|bit| match bit {
-                    '0' => -1,
-                    '1' => 1,
-                    _ => panic!("invalid bit {}", bit),
-                })
-                .collect::<Vec<isize>>()
-        })
-        .fold(Vec::new(), |acc: Vec<isize>, signals| {
-            let acc = if acc.is_empty() {
-                vec![0; signals.len()]
-            } else {
-                acc
-            };
-            acc.iter().zip(signals.iter()).map(|(a, b)| a + b).collect()
-        });
+        .collect::<Vec<_>>();
 
-    let (gamma, epsilon) =
-        signals
+    let signals = |input: &Vec<&str>| {
+        input
             .iter()
-            .fold((0, 0), |(gamma, epsilon), signal| match signal.cmp(&0) {
-                std::cmp::Ordering::Greater => ((gamma << 1) | 1, epsilon << 1),
-                std::cmp::Ordering::Less => (gamma << 1, (epsilon << 1) | 1),
-                std::cmp::Ordering::Equal => panic!("Not expecting 0 here"),
-            });
+            .map(|bits| {
+                bits.chars()
+                    .map(|bit| match bit {
+                        '0' => -1,
+                        '1' => 1,
+                        _ => panic!("invalid bit {}", bit),
+                    })
+                    .collect::<Vec<isize>>()
+            })
+            .fold(Vec::new(), |acc: Vec<isize>, signals| {
+                let acc = if acc.is_empty() {
+                    vec![0; signals.len()]
+                } else {
+                    acc
+                };
+                acc.iter().zip(signals.iter()).map(|(a, b)| a + b).collect()
+            })
+    };
+
+    let (gamma, epsilon) = signals(&input)
+        .iter()
+        .fold((0, 0), |(gamma, epsilon), signal| match signal.cmp(&0) {
+            std::cmp::Ordering::Greater => ((gamma << 1) | 1, epsilon << 1),
+            std::cmp::Ordering::Less => (gamma << 1, (epsilon << 1) | 1),
+            std::cmp::Ordering::Equal => panic!("Not expecting 0 here"),
+        });
 
     println!(
         "Day 03, Part 1: {}, {}, {}",
@@ -111,10 +116,66 @@ fn day3() {
         epsilon,
         gamma * epsilon
     );
+
+    let mut interim = input.clone();
+    let mut pos = 0;
+    let o2 = loop {
+        let signal = signals(&interim);
+        let signal = signal
+            .iter()
+            .map(|signal| if signal >= &0 { '1' } else { '0' })
+            .nth(pos);
+        interim = interim
+            .into_iter()
+            .filter(|diag| diag.chars().nth(pos) == signal)
+            .collect::<Vec<_>>();
+        if interim.len() == 1 {
+            break interim.pop().unwrap();
+        } else {
+            pos += 1;
+        };
+    }
+    .chars()
+    .fold(0, |acc, bit| match bit {
+        '1' => (acc << 1) | 1,
+        '0' => (acc << 1),
+        _ => acc,
+    });
+
+    let mut interim = input;
+    let mut pos = 0;
+    let co2 = loop {
+        let signal = signals(&interim);
+        let signal = signal
+            .iter()
+            .map(|signal| if signal >= &0 { '0' } else { '1' })
+            .collect::<String>();
+        let signal = signal.chars().nth(pos);
+        interim = interim
+            .into_iter()
+            .filter(|diag| diag.chars().nth(pos) == signal)
+            .collect::<Vec<_>>();
+        if interim.len() <= 1 {
+            break interim.pop().unwrap();
+        } else {
+            pos += 1;
+        };
+    }
+    .chars()
+    .fold(0, |acc, bit| match bit {
+        '1' => (acc << 1) | 1,
+        '0' => (acc << 1),
+        _ => acc,
+    });
+
+    println!("Day 03, Part 2: {}, {}, {}", o2, co2, o2 * co2);
 }
 
 fn main() {
-    let arg = std::env::args().skip(1).next().map(|arg| arg.parse::<isize>().ok()).flatten();
+    let arg = std::env::args()
+        .nth(1)
+        .map(|arg| arg.parse::<isize>().ok())
+        .flatten();
     match arg {
         Some(3) => day3(),
         Some(2) => day2(),
