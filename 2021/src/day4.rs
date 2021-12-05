@@ -63,7 +63,31 @@ pub fn run(input: &'static str) -> (usize, usize) {
     };
 
     let d4p1 = boards[winning_board].residual() * winning_call;
-    let d4p2 = 0;
+
+    boards.swap_remove(winning_board);
+
+    let (last_board, last_call) = loop {
+        let call = calls
+            .next()
+            .expect("Ran out of calls before finishing board");
+
+        let mut results = boards
+            .iter_mut()
+            .map(|board| board.bingo(call))
+            .collect::<Vec<_>>();
+
+        if results.len() == 1 && results.pop().unwrap() {
+            break (boards.pop().unwrap(), call);
+        }
+
+        while let Some(pos) = results.iter().position(|res| *res) {
+            boards.swap_remove(pos);
+            results.swap_remove(pos);
+        }
+    };
+
+    let d4p2 = last_board.residual() * last_call;
+
     (d4p1, d4p2)
 }
 
@@ -90,5 +114,5 @@ fn test() {
  2  0 12  3  7
 ";
 
-    assert_eq!(run(input), (4512, 0));
+    assert_eq!(run(input), (4512, 1924));
 }
