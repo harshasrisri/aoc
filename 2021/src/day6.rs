@@ -1,24 +1,27 @@
 use std::collections::VecDeque;
 
 pub fn run(input: &'static str) -> (usize, usize) {
-    let mut timer_pop = VecDeque::from(vec![0 as usize; 9]);
-    input.trim().split(',').for_each(|timer| timer_pop[timer.parse::<usize>().unwrap()] += 1);
+    let mut fish_age_groups: VecDeque<usize> = input
+        .trim()
+        .split(',')
+        .fold(vec![0_usize; 9], |mut acc_vec, timer| {
+            let timer = timer.parse::<usize>().unwrap();
+            acc_vec[timer] += 1;
+            acc_vec
+        })
+        .into();
 
-    for _ in 0..80 { 
-        let day0 = timer_pop.pop_front().unwrap();
-        timer_pop[6] += day0;
-        timer_pop.push_back(day0);
-    }
+    let elapse_day = |age_groups: &mut VecDeque<usize>| {
+        let day0 = age_groups.pop_front().unwrap();
+        age_groups[6] += day0;
+        age_groups.push_back(day0);
+    };
 
-    let d6p1 = timer_pop.iter().sum();
+    (0..80).for_each(|_| elapse_day(&mut fish_age_groups));
+    let d6p1 = fish_age_groups.iter().sum();
 
-    for _ in 81..=256 { 
-        let day0 = timer_pop.pop_front().unwrap();
-        timer_pop[6] += day0;
-        timer_pop.push_back(day0);
-    }
-
-    let d6p2 = timer_pop.into_iter().sum();
+    (80..256).for_each(|_| elapse_day(&mut fish_age_groups));
+    let d6p2 = fish_age_groups.into_iter().sum();
 
     (d6p1, d6p2)
 }
