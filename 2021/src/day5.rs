@@ -8,6 +8,8 @@ struct Line {
     y1: usize,
     x2: usize,
     y2: usize,
+    xd: isize,
+    yd: isize,
 }
 
 impl FromStr for Line {
@@ -19,12 +21,67 @@ impl FromStr for Line {
             .flat_map(|coord| coord.split(','))
             .map(|n| n.parse::<usize>())
             .collect::<PRes<Vec<usize>>>()?;
+        let (x1, y1, x2, y2) = (coords[0], coords[1], coords[2], coords[3]);
         Ok(Line {
-            x1: std::cmp::min(coords[0], coords[2]),
-            y1: std::cmp::min(coords[1], coords[3]),
-            x2: std::cmp::max(coords[0], coords[2]),
-            y2: std::cmp::max(coords[1], coords[3]),
+            x1,
+            y1,
+            x2,
+            y2,
+            xd: match x1.cmp(&x2) {
+                std::cmp::Ordering::Greater => -1,
+                std::cmp::Ordering::Equal => 0,
+                std::cmp::Ordering::Less => 1,
+            },
+            yd: match y1.cmp(&y2) {
+                std::cmp::Ordering::Greater => -1,
+                std::cmp::Ordering::Equal => 0,
+                std::cmp::Ordering::Less => 1,
+            },
         })
+    }
+}
+
+struct LineIter<'a> {
+    line: &'a Line,
+    curr: Option<(usize, usize)>,
+    ended: bool,
+}
+
+impl<'a> Iterator for LineIter<'a> {
+    type Item = (usize, usize);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.ended {
+            return None;
+        }
+        self.curr = if let Some((cur_x, cur_y)) = self.curr {
+            let cur_x = (cur_x as isize + self.line.xd) as usize;
+            let cur_y = (cur_y as isize + self.line.yd) as usize;
+
+            if cur_x == self.line.x2 && cur_y == self.line.y2 {
+                self.ended = true;
+            }
+
+            Some((cur_x, cur_y))
+        } else {
+            Some((self.line.x1, self.line.y1))
+        };
+
+        self.curr
+    }
+}
+
+impl Line {
+    pub fn iter(&self) -> LineIter {
+        LineIter {
+            line: self,
+            curr: None,
+            ended: false,
+        }
+    }
+
+    pub fn h_or_v(&self) -> bool {
+        self.xd == 0 || self.yd == 0
     }
 }
 
@@ -35,22 +92,18 @@ impl Matrix {
         Matrix(vec![vec![0; ymax + 1]; xmax + 1])
     }
 
-    pub fn add_line(&mut self, line: &Line) {
-        if line.x1 == line.x2 {
-            for y in line.y1..=line.y2 {
-                self.0[line.x1][y] += 1;
-            }
-        } else if line.y1 == line.y2 {
-            for x in line.x1..=line.x2 {
-                self.0[x][line.y1] += 1;
-            }
-        } else {
-            // TODO: Not handling diagonal lines
+    pub fn plot_line(&mut self, line: &Line) {
+        for (x, y) in line.iter() {
+            self.0[x][y] += 1;
         }
     }
 
-    pub fn hotspots(&self) -> usize { 
-        self.0.iter().flat_map(|v| v.iter()).filter(|&heat| *heat >= 2).count()
+    pub fn hotspots(&self) -> usize {
+        self.0
+            .iter()
+            .flat_map(|v| v.iter())
+            .filter(|&heat| *heat >= 2)
+            .count()
     }
 }
 
@@ -81,9 +134,19 @@ pub fn run(input: &'static str) -> (usize, usize) {
 
     let mut plane = Matrix::with_size(xmax, ymax);
 
-    lines.iter().for_each(|line| plane.add_line(line));
+    lines
+        .iter()
+        .filter(|line| line.h_or_v())
+        .for_each(|line| plane.plot_line(line));
+    let d5p1 = plane.hotspots();
 
-    (plane.hotspots(), 0)
+    lines
+        .iter()
+        .filter(|line| !line.h_or_v())
+        .for_each(|line| plane.plot_line(line));
+    let d5p2 = plane.hotspots();
+
+    (d5p1, d5p2)
 }
 
 #[test]
@@ -99,5 +162,5 @@ fn test() {
 0,0 -> 8,8
 5,5 -> 8,2
 ";
-    assert_eq!(run(input), (5, 0));
+    assert_eq!(run(input), (5, 12));
 }
