@@ -1,3 +1,5 @@
+#![feature(int_abs_diff)]
+
 mod day1;
 mod day2;
 mod day3;
