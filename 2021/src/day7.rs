@@ -59,25 +59,40 @@ pub fn run(input: &'static str) -> (usize, usize) {
 
     let bisect = |v: &[(usize, usize)], p: usize| -> (usize, usize) {
         (
-            v.iter().take_while(|(i, _)| i < &p).map(|(i, w)| { let i = i.abs_diff(p); i * (i + 1) * w / 2 }).sum(),
-            v.iter().skip_while(|(i, _)| i < &p).map(|(i, w)| { let i = i.abs_diff(p); i * (i + 1) * w / 2 }).sum(),
+            v.iter()
+                .take_while(|(i, _)| i < &p)
+                .map(|(i, w)| {
+                    let i = i.abs_diff(p);
+                    i * (i + 1) * w / 2
+                })
+                .sum(),
+            v.iter()
+                .skip_while(|(i, _)| i < &p)
+                .map(|(i, w)| {
+                    let i = i.abs_diff(p);
+                    i * (i + 1) * w / 2
+                })
+                .sum(),
         )
     };
 
     let median = get_median(&crab_groups, bisect);
 
-    let mdn_pos_in_vec = { 
+    let mdn_pos_in_vec = {
         let median_plus = crab_groups.iter().take_while(|(i, _)| i < &median).count();
         (median_plus - 1, median_plus)
     };
 
-    eprintln!("{} - {} - {}", crab_groups[mdn_pos_in_vec.0].0, median, crab_groups[mdn_pos_in_vec.1].0);
+    eprintln!(
+        "{} - {} - {}",
+        crab_groups[mdn_pos_in_vec.0].0, median, crab_groups[mdn_pos_in_vec.1].0
+    );
 
     let d7p2 = //(mdn_pos_in_vec.0..=mdn_pos_in_vec.1)
         (crab_groups[mdn_pos_in_vec.0].0..=crab_groups[mdn_pos_in_vec.1].0)
         .into_iter()
         .inspect(|median_pos| eprint!("{} - {} ", median_pos, crab_groups[*median_pos].0))
-        .map(|median_pos| { 
+        .map(|median_pos| {
             let median = crab_groups[median_pos].0;
             crab_groups
                 .iter()

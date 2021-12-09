@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
-struct Patterns { 
+#[allow(dead_code)]
+struct Patterns {
     pub input: Vec<String>,
     pub output: Vec<String>,
 }
@@ -10,14 +11,14 @@ impl FromStr for Patterns {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (input, output) = s.split_once('|').unwrap();
-        Ok(Patterns { 
+        Ok(Patterns {
             input: input.split(' ').map(String::from).collect(),
             output: output.split(' ').map(String::from).collect(),
         })
     }
 }
 
-fn process_data(input: &'static str) -> Vec<Patterns> { 
+fn process_data(input: &'static str) -> Vec<Patterns> {
     input
         .trim()
         .lines()
@@ -26,22 +27,24 @@ fn process_data(input: &'static str) -> Vec<Patterns> {
         .unwrap()
 }
 
-pub fn run(input: &'static str) -> (usize, usize) { 
+pub fn run(input: &'static str) -> (usize, usize) {
     let patterns = process_data(input);
 
     let d8p1 = patterns
         .iter()
-        .map(|pat| pat.output
-             .iter()
-             .filter(|output| [2, 3, 4, 7].contains(&output.len()))
-             .count())
+        .map(|pat| {
+            pat.output
+                .iter()
+                .filter(|output| [2, 3, 4, 7].contains(&output.len()))
+                .count()
+        })
         .sum();
 
     (d8p1, 0)
 }
 
 #[test]
-pub fn test() { 
+pub fn test() {
     let input = "
 be cfbegad cbdgef fgaecd cgeb fdcge agebfd fecdb fabcd edb | fdgacbe cefdb cefbgd gcbe
 edbfga begcd cbg gc gcadebf fbgde acbgfd abcde gfcbed gfec | fcgedb cgb dgebacf gc
@@ -54,5 +57,5 @@ bdfegc cbegaf gecbf dfcage bdacg ed bedf ced adcbefg gebcd | ed bcgafe cdgba cbg
 egadfb cdbfeg cegd fecab cgb gbdefca cg fgcdab egfdb bfceg | gbdfcae bgc cg cgb
 gcafb gcf dcaebfg ecagb gf abcdeg gaef cafbge fdbac fegbdc | fgae cfgab fg bagce
 ";
-    assert_eq!(run(input), (26,0));
+    assert_eq!(run(input), (26, 0));
 }
