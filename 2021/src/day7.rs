@@ -91,9 +91,7 @@ pub fn run(input: &'static str) -> (usize, usize) {
     let d7p2 = //(mdn_pos_in_vec.0..=mdn_pos_in_vec.1)
         (crab_groups[mdn_pos_in_vec.0].0..=crab_groups[mdn_pos_in_vec.1].0)
         .into_iter()
-        .inspect(|median_pos| eprint!("{} - {} ", median_pos, crab_groups[*median_pos].0))
-        .map(|median_pos| {
-            let median = crab_groups[median_pos].0;
+        .map(|median| {
             crab_groups
                 .iter()
                 .map(|(p, w)| {
@@ -103,11 +101,11 @@ pub fn run(input: &'static str) -> (usize, usize) {
             .sum::<usize>()
         })
         .inspect(|median_sum| eprintln!("median_sum: {}", median_sum))
-        .collect::<Vec<usize>>();
+        .min()
+        .unwrap();
 
-    eprintln!("{:?}", d7p2);
 
-    (d7p1, d7p2.into_iter().sum())
+    (d7p1, d7p2)
 }
 
 #[test]
