@@ -104,7 +104,6 @@ pub fn run(input: &'static str) -> (usize, usize) {
         .min()
         .unwrap();
 
-
     (d7p1, d7p2)
 }
 

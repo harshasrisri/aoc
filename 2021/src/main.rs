@@ -1,4 +1,5 @@
 #![feature(int_abs_diff)]
+#![feature(string_remove_matches)]
 
 mod day1;
 mod day2;
