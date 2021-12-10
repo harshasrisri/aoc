@@ -1,15 +1,15 @@
 #![feature(int_abs_diff)]
 #![feature(string_remove_matches)]
 
-mod day1;
-mod day2;
-mod day3;
-mod day4;
-mod day5;
-mod day6;
-mod day7;
-mod day8;
-mod day9;
+mod day01;
+mod day02;
+mod day03;
+mod day04;
+mod day05;
+mod day06;
+mod day07;
+mod day08;
+mod day09;
 
 fn fatal(s: &str) -> ! {
     eprintln!("{}", s);
@@ -22,15 +22,15 @@ fn main() {
         .map(|arg| arg.parse::<usize>().ok())
         .flatten();
     let (p1, p2) = match arg {
-        Some(9) => day9::run(include_str!("../inputs/d09.txt")),
-        Some(8) => day8::run(include_str!("../inputs/d08.txt")),
-        Some(7) => day7::run(include_str!("../inputs/d07.txt")),
-        Some(6) => day6::run(include_str!("../inputs/d06.txt")),
-        Some(5) => day5::run(include_str!("../inputs/d05.txt")),
-        Some(4) => day4::run(include_str!("../inputs/d04.txt")),
-        Some(3) => day3::run(include_str!("../inputs/d03.txt")),
-        Some(2) => day2::run(include_str!("../inputs/d02.txt")),
-        Some(1) => day1::run(include_str!("../inputs/d01.txt")),
+        Some(9) => day09::run(include_str!("../inputs/day09.txt")),
+        Some(8) => day08::run(include_str!("../inputs/day08.txt")),
+        Some(7) => day07::run(include_str!("../inputs/day07.txt")),
+        Some(6) => day06::run(include_str!("../inputs/day06.txt")),
+        Some(5) => day05::run(include_str!("../inputs/day05.txt")),
+        Some(4) => day04::run(include_str!("../inputs/day04.txt")),
+        Some(3) => day03::run(include_str!("../inputs/day03.txt")),
+        Some(2) => day02::run(include_str!("../inputs/day02.txt")),
+        Some(1) => day01::run(include_str!("../inputs/day01.txt")),
         Some(arg) => fatal(format!("Day {} - Not implemented", arg).as_str()),
         None => fatal("Invalid argument. Pass a number corresponding to the day."),
     };
