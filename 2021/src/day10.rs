@@ -1,12 +1,5 @@
 use std::ops::Not;
 
-#[allow(dead_code)]
-enum SyntaxStatus {
-    Valid,
-    Incomplete(Vec<Tokens>),
-    Corrupted(Tokens),
-}
-
 #[derive(Clone, Copy, PartialEq)]
 enum Tokens {
     OpenParens,
@@ -52,65 +45,56 @@ impl From<char> for Tokens {
     }
 }
 
-fn parse_syntax(line: &str) -> SyntaxStatus {
+fn parse_syntax(line: &str) -> (Option<Vec<Tokens>>, Option<Tokens>) {
     let mut stack = Vec::new();
     for token in line.chars().map(Tokens::from) {
         match token {
             Tokens::OpenParens | Tokens::OpenBracks | Tokens::OpenBraces | Tokens::OpenAngles => {
                 stack.push(token)
             }
-            Tokens::CloseParens
-            | Tokens::CloseBracks
-            | Tokens::CloseBraces
-            | Tokens::CloseAngles => {
+            token => {
                 if let Some(opener) = stack.pop() {
                     if opener != !token {
-                        return SyntaxStatus::Corrupted(token);
+                        return (None, Some(token));
                     }
                 }
             }
         };
     }
     if stack.is_empty() {
-        SyntaxStatus::Valid
+        (None, None)
     } else {
-        SyntaxStatus::Incomplete(stack)
+        (Some(stack.into_iter().rev().collect()), None)
     }
 }
 
 pub fn run(input: &'static str) -> (usize, usize) {
-    let (completions, scores): (Vec<_>, Vec<usize>) = input
-        .lines()
-        .map(parse_syntax)
-        .map(|status| match status {
-            SyntaxStatus::Corrupted(b) => {
-                let score = match b {
-                    Tokens::CloseParens => 3,
-                    Tokens::CloseBracks => 57,
-                    Tokens::CloseBraces => 1197,
-                    Tokens::CloseAngles => 25137,
-                    _ => 0,
-                };
-                (None, score)
-            }
-            SyntaxStatus::Incomplete(v) => (Some(v), 0),
-            SyntaxStatus::Valid => (None, 0),
-        })
-        .unzip();
+    let (completions, scores): (Vec<_>, Vec<_>) = input.lines().map(parse_syntax).unzip();
 
-    let d10p1 = scores.iter().sum();
+    let d10p1 = scores
+        .into_iter()
+        .flatten()
+        .fold(0, |acc, token| match token {
+            Tokens::CloseParens => acc + 3,
+            Tokens::CloseBracks => acc + 57,
+            Tokens::CloseBraces => acc + 1197,
+            Tokens::CloseAngles => acc + 25137,
+            _ => panic!("Invalid token"),
+        });
 
     let mut d10p2_scores = completions
-        .iter()
-        .filter_map(|v| v.as_ref())
-        .map(|v| {
-            v.iter().rev().fold(0_usize, |acc, token| match *token {
-                Tokens::OpenParens => acc * 5 + 1,
-                Tokens::OpenBracks => acc * 5 + 2,
-                Tokens::OpenBraces => acc * 5 + 3,
-                Tokens::OpenAngles => acc * 5 + 4,
-                _ => panic!("Invalid token"),
-            })
+        .into_iter()
+        .flatten()
+        .map(|incompletions| {
+            incompletions
+                .into_iter()
+                .fold(0_usize, |acc, token| match token {
+                    Tokens::OpenParens => acc * 5 + 1,
+                    Tokens::OpenBracks => acc * 5 + 2,
+                    Tokens::OpenBraces => acc * 5 + 3,
+                    Tokens::OpenAngles => acc * 5 + 4,
+                    _ => panic!("Invalid token"),
+                })
         })
         .collect::<Vec<_>>();
 
