@@ -3,7 +3,7 @@ use std::ops::Not;
 #[allow(dead_code)]
 enum SyntaxStatus {
     Valid,
-    Incomplete(Tokens),
+    Incomplete(Vec<Tokens>),
     Corrupted(Tokens),
 }
 
@@ -24,13 +24,13 @@ impl Not for Tokens {
 
     fn not(self) -> Self::Output {
         match self {
-            Tokens::OpenParens =>  Tokens::CloseParens,
+            Tokens::OpenParens => Tokens::CloseParens,
             Tokens::CloseParens => Tokens::OpenParens,
-            Tokens::OpenBracks =>  Tokens::CloseBracks,
+            Tokens::OpenBracks => Tokens::CloseBracks,
             Tokens::CloseBracks => Tokens::OpenBracks,
-            Tokens::OpenBraces =>  Tokens::CloseBraces,
+            Tokens::OpenBraces => Tokens::CloseBraces,
             Tokens::CloseBraces => Tokens::OpenBraces,
-            Tokens::OpenAngles =>  Tokens::CloseAngles,
+            Tokens::OpenAngles => Tokens::CloseAngles,
             Tokens::CloseAngles => Tokens::OpenAngles,
         }
     }
@@ -47,52 +47,80 @@ impl From<char> for Tokens {
             ']' => Tokens::CloseBracks,
             '}' => Tokens::CloseBraces,
             '>' => Tokens::CloseAngles,
-            _ => panic!("Invalid token")
+            _ => panic!("Invalid token"),
         }
     }
 }
 
 fn parse_syntax(line: &str) -> SyntaxStatus {
     let mut stack = Vec::new();
-    for token in line.chars().map(|c| Tokens::from(c)) {
+    for token in line.chars().map(Tokens::from) {
         match token {
-            Tokens::OpenParens | Tokens::OpenBracks | Tokens::OpenBraces | Tokens::OpenAngles => stack.push(token),
-            Tokens::CloseParens | Tokens::CloseBracks | Tokens::CloseBraces | Tokens::CloseAngles => {
+            Tokens::OpenParens | Tokens::OpenBracks | Tokens::OpenBraces | Tokens::OpenAngles => {
+                stack.push(token)
+            }
+            Tokens::CloseParens
+            | Tokens::CloseBracks
+            | Tokens::CloseBraces
+            | Tokens::CloseAngles => {
                 if let Some(opener) = stack.pop() {
                     if opener != !token {
                         return SyntaxStatus::Corrupted(token);
                     }
-                } else {
-                    return SyntaxStatus::Incomplete(token);
                 }
             }
         };
     }
-    SyntaxStatus::Valid
+    if stack.is_empty() {
+        SyntaxStatus::Valid
+    } else {
+        SyntaxStatus::Incomplete(stack)
+    }
 }
 
 pub fn run(input: &'static str) -> (usize, usize) {
-    let d10p1 = input
+    let (completions, scores): (Vec<_>, Vec<usize>) = input
         .lines()
         .map(parse_syntax)
-        .filter_map(|status| if let SyntaxStatus::Corrupted(b) = status {
-            match b {
-                Tokens::CloseParens => Some(3),
-                Tokens::CloseBracks => Some(57),
-                Tokens::CloseBraces => Some(1197),
-                Tokens::CloseAngles => Some(25137),
-                _ => None,
+        .map(|status| match status {
+            SyntaxStatus::Corrupted(b) => {
+                let score = match b {
+                    Tokens::CloseParens => 3,
+                    Tokens::CloseBracks => 57,
+                    Tokens::CloseBraces => 1197,
+                    Tokens::CloseAngles => 25137,
+                    _ => 0,
+                };
+                (None, score)
             }
-        } else {
-            None
+            SyntaxStatus::Incomplete(v) => (Some(v), 0),
+            SyntaxStatus::Valid => (None, 0),
         })
-        .sum();
+        .unzip();
 
-    (d10p1, 0)
+    let d10p1 = scores.iter().sum();
+
+    let mut d10p2_scores = completions
+        .iter()
+        .filter_map(|v| v.as_ref())
+        .map(|v| {
+            v.iter().rev().fold(0_usize, |acc, token| match *token {
+                Tokens::OpenParens => acc * 5 + 1,
+                Tokens::OpenBracks => acc * 5 + 2,
+                Tokens::OpenBraces => acc * 5 + 3,
+                Tokens::OpenAngles => acc * 5 + 4,
+                _ => panic!("Invalid token"),
+            })
+        })
+        .collect::<Vec<_>>();
+
+    d10p2_scores.sort_unstable();
+
+    (d10p1, d10p2_scores[d10p2_scores.len() / 2])
 }
 
 #[test]
-fn test() { 
+fn test() {
     let input = "
 [({(<(())[]>[[{[]{<()<>>
 [(()[<>])]({[<{<<[]>>(
@@ -105,5 +133,5 @@ fn test() {
 <{([([[(<>()){}]>(<<{{
 <{([{{}}[<[[[<>{}]]]>[]]
 ";
-    assert_eq!(run(input), (26397, 0));
+    assert_eq!(run(input), (26397, 288957));
 }
