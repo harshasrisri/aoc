@@ -7,15 +7,15 @@ trait FlashingOctopii {
 
 impl FlashingOctopii for Vec<Vec<u32>> {
     fn elapse_day(&mut self) {
-        for row in self.iter_mut() { 
-            for octopus in row.iter_mut() { 
+        for row in self.iter_mut() {
+            for octopus in row.iter_mut() {
                 *octopus += 1;
             }
         }
     }
 
     fn flash_octopus(&mut self, x: usize, y: usize) {
-        if self[x][y] <= 9 { 
+        if self[x][y] <= 9 {
             return;
         }
 
@@ -24,17 +24,17 @@ impl FlashingOctopii for Vec<Vec<u32>> {
         let (x1, x2) = (
             x.checked_sub(1).unwrap_or_default(),
             (x + 1).min(self.len() - 1),
-            );
+        );
         let (y1, y2) = (
             y.checked_sub(1).unwrap_or_default(),
             (y + 1).min(self[x].len() - 1),
-            );
+        );
 
         for xi in x1..=x2 {
             for yi in y1..=y2 {
-                if (xi, yi) == (x,y) || self[xi][yi] == 0 { 
+                if (xi, yi) == (x, y) || self[xi][yi] == 0 {
                     continue;
-                } else { 
+                } else {
                     self[xi][yi] += 1;
                     self.flash_octopus(xi, yi);
                 }
@@ -51,13 +51,13 @@ impl FlashingOctopii for Vec<Vec<u32>> {
     }
 
     fn print(&self) {
-        for row in self.iter() { 
-            for octopus in row.iter() { 
+        for row in self.iter() {
+            for octopus in row.iter() {
                 eprint!("{:2} ", octopus);
             }
-            eprintln!("");
+            eprintln!();
         }
-        eprintln!("");
+        eprintln!();
     }
 }
 
@@ -74,13 +74,26 @@ pub fn run(input: &'static str) -> (usize, usize) {
         .map(|x| (0..width).map(move |y| (x, y)))
         .flatten();
 
-    let d11p1 = (0..100).into_iter().map(|_| { 
-        map.elapse_day();
-        coords.clone().for_each(|(x, y)| map.flash_octopus(x, y));
-        map.num_flashes()
-    }).sum::<usize>();
+    let d11p1 = (0..100)
+        .map(|_| {
+            map.elapse_day();
+            coords.clone().for_each(|(x, y)| map.flash_octopus(x, y));
+            map.num_flashes()
+        })
+        .sum::<usize>();
 
-    (d11p1, 0)
+    let d11p2 = 100 + // 1st 100 for part1
+        (100..)
+        .map(|_| {
+            map.elapse_day();
+            coords.clone().for_each(|(x, y)| map.flash_octopus(x, y));
+            map.num_flashes()
+        })
+        .take_while(|flashes| *flashes < height * width)
+        .count()
+        + 1; // take_while skips the last condition
+
+    (d11p1, d11p2)
 }
 
 #[test]
@@ -97,5 +110,5 @@ fn test() {
 4846848554
 5283751526
 ";
-    assert_eq!(run(input), (1656, 0));
+    assert_eq!(run(input), (1656, 195));
 }
