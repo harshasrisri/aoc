@@ -12,6 +12,7 @@ mod day08;
 mod day09;
 mod day10;
 mod day11;
+mod day12;
 
 fn fatal(s: &str) -> ! {
     eprintln!("{}", s);
@@ -24,6 +25,7 @@ fn main() {
         .map(|arg| arg.parse::<usize>().ok())
         .flatten();
     let (p1, p2) = match arg {
+        Some(12) => day12::run(include_str!("../inputs/day12.txt")),
         Some(11) => day11::run(include_str!("../inputs/day11.txt")),
         Some(10) => day10::run(include_str!("../inputs/day10.txt")),
         Some(9) => day09::run(include_str!("../inputs/day09.txt")),
