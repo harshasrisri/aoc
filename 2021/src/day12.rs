@@ -5,12 +5,29 @@ enum Cave {
     Start,
     Big(String),
     Small(String),
+    Twice(String),
     End,
 }
 
 impl Cave {
-    pub fn is_big(&self) -> bool {
+    fn is_big(&self) -> bool {
         matches!(self, Cave::Big(_))
+    }
+
+    fn bump(self) -> Self {
+         if let Cave::Small(cave) = self { 
+             Cave::Twice(cave)
+         } else { 
+             self
+         }
+     }
+
+    fn boop(self) -> Self { 
+        if let Cave::Twice(cave) = self { 
+            Cave::Small(cave)
+        } else { 
+            self
+        }
     }
 }
 
@@ -63,6 +80,11 @@ fn traverse(mut cave_map: CaveMap, curr: &Cave) -> usize {
         Cave::Start | Cave::Small(_) => cave_map.remove(curr),
         Cave::End => return 1,
         Cave::Big(_) => cave_map.get(curr).cloned(),
+        Cave::Twice(_) => { 
+            let adj = cave_map.get(curr).cloned();
+            boop_medium(&mut cave_map, curr);
+            adj
+        },
     };
 
     let adjacents = if let Some(adj) = adjacents {
@@ -79,6 +101,30 @@ fn traverse(mut cave_map: CaveMap, curr: &Cave) -> usize {
     num_paths
 }
 
+fn boop_medium(cave_map: &mut CaveMap, twice_cave: &Cave) { 
+    let (twice_cave, list) = cave_map.remove_entry(twice_cave).unwrap();
+    for (_, list) in cave_map.iter_mut() { 
+        if let Some(pos) = list.iter().position(|cave| *cave == twice_cave) { 
+            let twice_cave = list.swap_remove(pos);
+            list.push(twice_cave.boop());
+        }
+    }
+    cave_map.insert(twice_cave.boop(), list);
+}
+
+fn bump_small(cave_map: &CaveMap, small: &Cave) -> CaveMap { 
+    let mut new_cave = cave_map.clone();
+    let (small, list) = new_cave.remove_entry(small).unwrap();
+    for (_, list) in new_cave.iter_mut() { 
+        if let Some(pos) = list.iter().position(|cave| *cave == small) { 
+            let small = list.swap_remove(pos);
+            list.push(small.bump());
+        }
+    }
+    new_cave.insert(small.bump(), list);
+    new_cave
+}
+
 pub fn run(input: &'static str) -> (usize, usize) {
     let caves = map_caves(input);
 
@@ -89,23 +135,37 @@ pub fn run(input: &'static str) -> (usize, usize) {
         .map(|to| traverse(caves.clone(), to))
         .sum();
 
-    (d12p1, 0)
+    let d12p2 = caves
+        .keys()
+        .filter(|cave| matches!(cave, Cave::Small(_)))
+        .map(|small| { 
+            let cave_map = bump_small(&caves, small);
+            cave_map
+                .get(&Cave::Start)
+                .unwrap()
+                .iter()
+                .map(|to| traverse(cave_map.clone(), to))
+                .sum::<usize>()
+        })
+        .sum();
+
+    (d12p1, d12p2)
 }
 
 #[test]
 fn test1() {
     let input = "start-A\nstart-b\nA-c\nA-b\nb-d\nA-end\nb-end";
-    assert_eq!(run(input), (10, 0));
+    assert_eq!(run(input), (10, 36));
 }
 
 #[test]
 fn test2() {
     let input = "dc-end\nHN-start\nstart-kj\ndc-start\ndc-HN\nLN-dc\nHN-end\nkj-sa\nkj-HN\nkj-dc";
-    assert_eq!(run(input), (19, 0));
+    assert_eq!(run(input), (19, 103));
 }
 
 #[test]
 fn test3() {
     let input = "fs-end\nhe-DX\nfs-he\nstart-DX\npj-DX\nend-zg\nzg-sl\nzg-pj\npj-he\nRW-he\nfs-DX\npj-RW\nzg-RW\nstart-pj\nhe-WI\nzg-he\npj-fs\nstart-RW";
-    assert_eq!(run(input), (226, 0));
+    assert_eq!(run(input), (226, 3509));
 }
