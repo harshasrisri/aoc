@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Display};
 
 #[derive(Hash, PartialEq, Eq, Debug, Clone)]
 enum Cave {
@@ -7,6 +7,18 @@ enum Cave {
     Small(String),
     Twice(String),
     End,
+}
+
+impl Display for Cave {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            Cave::Start => "start".to_owned(),
+            Cave::Big(s) => format!(",{}", s),
+            Cave::Small(s) => format!(",{}", s),
+            Cave::Twice(s) => format!(",{}", s),
+            Cave::End => format!(",end\n"),
+        })
+    }
 }
 
 impl Cave {
