@@ -11,13 +11,17 @@ enum Cave {
 
 impl Display for Cave {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            Cave::Start => "start".to_owned(),
-            Cave::Big(s) => format!(",{}", s),
-            Cave::Small(s) => format!(",{}", s),
-            Cave::Twice(s) => format!(",{}", s),
-            Cave::End => format!(",end\n"),
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                Cave::Start => "start".to_owned(),
+                Cave::Big(s) => format!(",{}", s),
+                Cave::Small(s) => format!(",{}", s),
+                Cave::Twice(s) => format!(",{}", s),
+                Cave::End => format!(",end\n"),
+            }
+        )
     }
 }
 
@@ -27,17 +31,17 @@ impl Cave {
     }
 
     fn bump(self) -> Self {
-         if let Cave::Small(cave) = self { 
-             Cave::Twice(cave)
-         } else { 
-             self
-         }
-     }
+        if let Cave::Small(cave) = self {
+            Cave::Twice(cave)
+        } else {
+            self
+        }
+    }
 
-    fn boop(self) -> Self { 
-        if let Cave::Twice(cave) = self { 
+    fn boop(self) -> Self {
+        if let Cave::Twice(cave) = self {
             Cave::Small(cave)
-        } else { 
+        } else {
             self
         }
     }
@@ -92,11 +96,11 @@ fn traverse(mut cave_map: CaveMap, curr: &Cave) -> usize {
         Cave::Start | Cave::Small(_) => cave_map.remove(curr),
         Cave::End => return 1,
         Cave::Big(_) => cave_map.get(curr).cloned(),
-        Cave::Twice(_) => { 
+        Cave::Twice(_) => {
             let adj = cave_map.get(curr).cloned();
             boop_medium(&mut cave_map, curr);
             adj
-        },
+        }
     };
 
     let adjacents = if let Some(adj) = adjacents {
@@ -113,10 +117,10 @@ fn traverse(mut cave_map: CaveMap, curr: &Cave) -> usize {
     num_paths
 }
 
-fn boop_medium(cave_map: &mut CaveMap, twice_cave: &Cave) { 
+fn boop_medium(cave_map: &mut CaveMap, twice_cave: &Cave) {
     let (twice_cave, list) = cave_map.remove_entry(twice_cave).unwrap();
-    for (_, list) in cave_map.iter_mut() { 
-        if let Some(pos) = list.iter().position(|cave| *cave == twice_cave) { 
+    for (_, list) in cave_map.iter_mut() {
+        if let Some(pos) = list.iter().position(|cave| *cave == twice_cave) {
             let twice_cave = list.swap_remove(pos);
             list.push(twice_cave.boop());
         }
@@ -124,11 +128,11 @@ fn boop_medium(cave_map: &mut CaveMap, twice_cave: &Cave) {
     cave_map.insert(twice_cave.boop(), list);
 }
 
-fn bump_small(cave_map: &CaveMap, small: &Cave) -> CaveMap { 
+fn bump_small(cave_map: &CaveMap, small: &Cave) -> CaveMap {
     let mut new_cave = cave_map.clone();
     let (small, list) = new_cave.remove_entry(small).unwrap();
-    for (_, list) in new_cave.iter_mut() { 
-        if let Some(pos) = list.iter().position(|cave| *cave == small) { 
+    for (_, list) in new_cave.iter_mut() {
+        if let Some(pos) = list.iter().position(|cave| *cave == small) {
             let small = list.swap_remove(pos);
             list.push(small.bump());
         }
@@ -150,7 +154,7 @@ pub fn run(input: &'static str) -> (usize, usize) {
     let d12p2 = caves
         .keys()
         .filter(|cave| matches!(cave, Cave::Small(_)))
-        .map(|small| { 
+        .map(|small| {
             let cave_map = bump_small(&caves, small);
             cave_map
                 .get(&Cave::Start)
