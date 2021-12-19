@@ -37,7 +37,9 @@ impl DotMap {
         }
     }
 
-    fn count(&self) -> usize {
+    fn count(&mut self) -> usize {
+        self.coords.sort();
+        self.coords.dedup();
         self.coords.len()
     }
 
@@ -64,8 +66,6 @@ impl DotMap {
                 self.x_max = x - 1;
             }
         }
-        self.coords.sort();
-        self.coords.dedup();
         self
     }
 
@@ -74,8 +74,8 @@ impl DotMap {
             for x in 0..=self.x_max {
                 eprint!(
                     "{}",
-                    if self.coords.binary_search(&CoOrd { x, y }).is_ok() {
-                        '●'
+                    if self.coords.contains(&CoOrd { x, y }) {
+                        '█'
                     } else {
                         ' '
                     }
