@@ -4,95 +4,84 @@ enum FoldAlong {
     Col(usize),
 }
 
-struct DotMap(Vec<Vec<bool>>);
+#[derive(Ord, PartialEq, PartialOrd, Eq)]
+struct CoOrd {
+    x: usize,
+    y: usize,
+}
+
+struct DotMap {
+    coords: Vec<CoOrd>,
+    x_max: usize,
+    y_max: usize,
+}
 
 impl DotMap {
-    fn rows(&self) -> usize {
-        self.0.len()
-    }
-
-    fn cols(&self) -> usize {
-        self.0[0].len()
-    }
-
     fn build<'a>(input: impl Iterator<Item = &'a str>) -> DotMap {
         let (mut x_max, mut y_max) = (0, 0);
-        let (xs, ys): (Vec<usize>, Vec<usize>) = input
+        let coords = input
             .filter_map(|line| line.split_once(','))
-            .map(|(x, y)| (x.parse::<usize>().unwrap(), y.parse::<usize>().unwrap()))
-            .inspect(|(x, y)| {
-                x_max = x_max.max(*x);
-                y_max = y_max.max(*y);
+            .map(|(x, y)| {
+                let x = x.parse::<usize>().unwrap();
+                let y = y.parse::<usize>().unwrap();
+                x_max = x_max.max(x);
+                y_max = y_max.max(y);
+                CoOrd { x, y }
             })
-            .unzip();
+            .collect();
 
-        let mut ret = vec![vec![false; x_max + 1]; y_max + 1];
-        xs.into_iter()
-            .zip(ys.into_iter())
-            .for_each(|(x, y)| ret[y][x] = true);
-        DotMap(ret)
-    }
-
-    fn print(&self) {
-        for y in 0..self.0.len() {
-            for x in 0..self.0[0].len() {
-                eprint!("{}", if self.0[y][x] { "●" } else { " " })
-            }
-            eprintln!()
+        DotMap {
+            coords,
+            x_max,
+            y_max,
         }
-        eprintln!()
     }
 
     fn count(&self) -> usize {
-        self.0
-            .iter()
-            .map(|row| row.iter())
-            .flatten()
-            .filter(|dot| **dot)
-            .count()
+        self.coords.len()
     }
 
     fn fold(mut self, fold_along: FoldAlong) -> Self {
         match fold_along {
-            FoldAlong::Row(row) => {
-                assert!(
-                    row <= (self.rows() + 1) / 2,
-                    "Bottom fold larger than top {} <> {}",
-                    row,
-                    self.0.len() / 2
+            FoldAlong::Row(y) => {
+                self.coords
+                    .iter_mut()
+                    .filter(|coord| coord.y > y)
+                    .for_each(|coord| {
+                        let diff = coord.y - y;
+                        coord.y -= 2 * diff;
+                    });
+                self.y_max = y - 1;
+            }
+            FoldAlong::Col(x) => {
+                self.coords
+                    .iter_mut()
+                    .filter(|coord| coord.x > x)
+                    .for_each(|coord| {
+                        let diff = coord.x - x;
+                        coord.x -= 2 * diff;
+                    });
+                self.x_max = x - 1;
+            }
+        }
+        self.coords.sort();
+        self.coords.dedup();
+        self
+    }
+
+    fn print(&self) {
+        for y in 0..=self.y_max {
+            for x in 0..=self.x_max {
+                eprint!(
+                    "{}",
+                    if self.coords.binary_search(&CoOrd { x, y }).is_ok() {
+                        '●'
+                    } else {
+                        ' '
+                    }
                 );
-                let bottom = self.0.split_off(row + 1);
-                self.0.pop();
-                DotMap(
-                    self.0
-                        .into_iter()
-                        .zip(bottom.into_iter().rev())
-                        .map(|(top_vec, bot_vec)| {
-                            top_vec
-                                .into_iter()
-                                .zip(bot_vec.into_iter())
-                                .map(|(t, b)| t | b)
-                                .collect()
-                        })
-                        .collect(),
-                )
             }
-            FoldAlong::Col(col) => {
-                assert!(col <= (self.cols() + 1) / 2, "Right fold larger than left");
-                DotMap(
-                    self.0
-                        .into_iter()
-                        .map(|mut row| {
-                            let right = row.split_off(col + 1);
-                            row.pop();
-                            row.into_iter()
-                                .zip(right.into_iter().rev())
-                                .map(|(l, r)| l | r)
-                                .collect()
-                        })
-                        .collect(),
-                )
-            }
+            eprintln!();
         }
     }
 }
@@ -118,10 +107,9 @@ pub fn run(input: &'static str) -> (usize, usize) {
     dot_map = dot_map.fold(folds.remove(0));
     let d13p1 = dot_map.count();
 
-    dot_map = folds.into_iter().fold(dot_map, |dot_map, fold_along| {
-        // eprintln!("{:?} - {:?}", fold_along, dot_map.dimension());
-        dot_map.fold(fold_along)
-    });
+    dot_map = folds
+        .into_iter()
+        .fold(dot_map, |dot_map, fold_along| dot_map.fold(fold_along));
 
     dot_map.print();
 
