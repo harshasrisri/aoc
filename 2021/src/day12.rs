@@ -19,7 +19,7 @@ impl Display for Cave {
                 Cave::Big(s) => format!(",{}", s),
                 Cave::Small(s) => format!(",{}", s),
                 Cave::Twice(s) => format!(",{}", s),
-                Cave::End => format!(",end\n"),
+                Cave::End => ",end\n".to_string(),
             }
         )
     }
