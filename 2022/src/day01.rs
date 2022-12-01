@@ -1,6 +1,5 @@
 pub fn run(input: &'static str) -> (usize, usize) {
-    let (mut max, mut mid, mut min) = (0, 0, 0);
-    input
+    let (min, mid, max) = input
         .split("\n\n")
         .map(|elf_cals| {
             elf_cals
@@ -8,8 +7,8 @@ pub fn run(input: &'static str) -> (usize, usize) {
                 .map(|cals| cals.parse::<usize>().unwrap_or_default())
                 .sum()
         })
-        .for_each(|cals| {
-            (min, mid, max) = if cals >= max {
+        .fold((0,0,0), |(min, mid, max), cals| {
+            if cals >= max {
                 (mid, max, cals)
             } else if cals >= mid {
                 (mid, cals, max)
