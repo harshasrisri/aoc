@@ -1,13 +1,26 @@
 pub fn run(input: &'static str) -> (usize, usize) {
-    let p1 = input
+    let (mut max, mut mid, mut min) = (0, 0, 0);
+    input
         .split("\n\n")
         .map(|elf_cals| {
             elf_cals
-                .split("\n")
+                .split('\n')
                 .map(|cals| cals.parse::<usize>().unwrap_or_default())
                 .sum()
-        }).max().unwrap();
-    (p1, 0)
+        })
+        .for_each(|cals| {
+            (min, mid, max) = if cals >= max {
+                (mid, max, cals)
+            } else if cals >= mid {
+                (mid, cals, max)
+            } else if cals >= min {
+                (cals, mid, max)
+            } else {
+                (min, mid, max)
+            }
+        });
+
+    (max, max + mid + min)
 }
 
 #[test]
@@ -26,5 +39,5 @@ fn test() {
 9000
 
 10000";
-    assert_eq!(run(input), (24000,0));
+    assert_eq!(run(input), (24000, 45000));
 }
