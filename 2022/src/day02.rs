@@ -14,15 +14,15 @@ pub fn run(input: &'static str) -> (usize, usize) {
     input
         .lines()
         .map(|play| {
-            let mut play = play.trim().split(' ');
+            let mut play = play.chars().filter(|c| !c.is_whitespace());
 
-            let elf = play.next().unwrap().chars().next().unwrap() as usize - 'A' as usize;
-            let you = play.next().unwrap().chars().next().unwrap() as usize - 'X' as usize;
+            let elf = play.next().unwrap() as usize - 'A' as usize;
+            let you = play.next().unwrap() as usize - 'X' as usize;
             let p1 = scores[elf][you] + you + 1;
-
+            
             let result = you;
             let p2 = results[elf][result] + (result * 3);
-
+            
             (p1, p2)
         })
         .fold((0, 0), |(s1, s2), (p1, p2)| (s1 + p1, s2 + p2))
