@@ -24,7 +24,8 @@ pub fn run(input: &'static str) -> (usize, usize) {
 
 #[test]
 fn test() {
-    let input = "1000
+    let input = "\
+1000
 2000
 3000
 
@@ -37,6 +38,7 @@ fn test() {
 8000
 9000
 
-10000";
+10000
+";
     assert_eq!(run(input), (24000, 45000));
 }
