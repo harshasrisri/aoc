@@ -7,7 +7,7 @@ pub fn run(input: &'static str) -> (usize, usize) {
                 .map(|cals| cals.parse::<usize>().unwrap_or_default())
                 .sum()
         })
-        .fold((0,0,0), |(min, mid, max), cals| {
+        .fold((0, 0, 0), |(min, mid, max), cals| {
             if cals >= max {
                 (mid, max, cals)
             } else if cals >= mid {
