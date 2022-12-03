@@ -1,15 +1,7 @@
 pub fn run(input: &'static str) -> (usize, usize) {
-    let scores = [
-        [3, 6, 0],
-        [0, 3, 6], 
-        [6, 0, 3]
-    ];
+    let scores = [[3, 6, 0], [0, 3, 6], [6, 0, 3]];
 
-    let results = [
-        [3, 1, 2], 
-        [1, 2, 3], 
-        [2, 3, 1]
-    ];
+    let results = [[3, 1, 2], [1, 2, 3], [2, 3, 1]];
 
     input
         .lines()
