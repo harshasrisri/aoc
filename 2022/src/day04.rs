@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 pub fn run(input: &'static str) -> (usize, usize) {
-    let p1 = input
+    input
         .lines()
         .map(|line| {
             let (assn1, assn2) = line.split_once(',').unwrap_or_default();
@@ -14,12 +14,19 @@ pub fn run(input: &'static str) -> (usize, usize) {
             let (start, end) = (start.parse::<usize>().unwrap_or_default(), end.parse::<usize>().unwrap_or_default());
             let assn2 = (start..=end).collect::<HashSet<_>>();
 
-            assn1.is_subset(&assn2) || assn2.is_subset(&assn1)
+            let p1 = assn1.is_subset(&assn2) || assn2.is_subset(&assn1);
+            let p2 = assn1.intersection(&assn2).next().is_some();
+            (p1, p2)
         })
-        .filter(|is_subset| *is_subset)
-        .count();
-
-    (p1, 0)
+        .fold((0,0), |(mut c1, mut c2), (p1, p2)| {
+            if p1 {
+                c1 += 1;
+            }
+            if p2 {
+                c2 += 1;
+            }
+            (c1, c2)
+        })
 }
 
 #[test]
@@ -32,5 +39,5 @@ fn test() {
 6-6,4-6
 2-6,4-8
 ";
-    assert_eq!(run(input), (2,0));
+    assert_eq!(run(input), (2,4));
 }
