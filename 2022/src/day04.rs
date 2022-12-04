@@ -1,31 +1,19 @@
 use std::collections::HashSet;
+use sscanf::sscanf;
 
 pub fn run(input: &'static str) -> (usize, usize) {
     input
         .lines()
         .map(|line| {
-            let (assn1, assn2) = line.split_once(',').unwrap_or_default();
-
-            let (start, end) = assn1.split_once('-').unwrap_or_default();
-            let (start, end) = (start.parse::<usize>().unwrap_or_default(), end.parse::<usize>().unwrap_or_default());
-            let assn1 = (start..=end).collect::<HashSet<_>>();
-
-            let (start, end) = assn2.split_once('-').unwrap_or_default();
-            let (start, end) = (start.parse::<usize>().unwrap_or_default(), end.parse::<usize>().unwrap_or_default());
-            let assn2 = (start..=end).collect::<HashSet<_>>();
-
+            let (s1, e1, s2, e2) = sscanf!(line, "{usize}-{usize},{usize}-{usize}").unwrap();
+            let assn1 = (s1..=e1).collect::<HashSet<_>>();
+            let assn2 = (s2..=e2).collect::<HashSet<_>>();
             let p1 = assn1.is_subset(&assn2) || assn2.is_subset(&assn1);
             let p2 = assn1.intersection(&assn2).next().is_some();
             (p1, p2)
         })
-        .fold((0,0), |(mut c1, mut c2), (p1, p2)| {
-            if p1 {
-                c1 += 1;
-            }
-            if p2 {
-                c2 += 1;
-            }
-            (c1, c2)
+        .fold((0, 0), |(c1, c2), (p1, p2)| {
+            (c1 + p1 as usize, c2 + p2 as usize)
         })
 }
 
@@ -39,5 +27,5 @@ fn test() {
 6-6,4-6
 2-6,4-8
 ";
-    assert_eq!(run(input), (2,4));
+    assert_eq!(run(input), (2, 4));
 }
