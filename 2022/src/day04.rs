@@ -1,5 +1,5 @@
-use std::collections::HashSet;
 use sscanf::sscanf;
+use std::collections::HashSet;
 
 pub fn run(input: &'static str) -> (usize, usize) {
     input

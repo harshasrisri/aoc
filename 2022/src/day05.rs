@@ -1,14 +1,11 @@
 use sscanf::sscanf;
 
-fn transpose<T>(input: Vec<Vec<T>>) -> Vec<Vec<T>> 
-where 
+fn transpose<T>(input: Vec<Vec<T>>) -> Vec<Vec<T>>
+where
     T: Clone,
 {
-    (0..input[0].len()) .map(|i| {
-            input.iter()
-                .map(|row| row[i].clone())
-                .collect::<Vec<_>>()
-        })
+    (0..input[0].len())
+        .map(|i| input.iter().map(|row| row[i].clone()).collect::<Vec<_>>())
         .collect()
 }
 
@@ -19,56 +16,61 @@ struct Operation {
 }
 
 pub fn run(input: &'static str) -> (String, String) {
-    let mut stacks = input
+    let stacks = input
         .lines()
-        .take_while(|line| !line.is_empty())
-        .map(|row| row.replace("    ", "[.] "))
-        .map(|row| row.replace("[", "").replace("]", ""))
-        .map(|row| row
-             .split(' ')
-             .chain(std::iter::repeat("."))
-             .take(9)
-             .map(|s| s.to_owned())
-             .collect::<Vec<_>>())
+        .take_while(|line| line.contains('['))
+        .map(|line| {
+            let vline = line
+                .chars()
+                .chain(std::iter::repeat(' '))
+                .take(9 * 4)
+                .collect::<Vec<_>>();
+            vline.chunks(4).map(|chunk| chunk[1]).collect::<Vec<_>>()
+        })
         .collect::<Vec<_>>();
 
-    let skip_lines = stacks.len() + 1;
-    stacks.pop(); // pop last row which has stack numbers
-
-    // transpose and remove empty slots
-    let mut stacks = transpose(stacks)
-        .iter_mut()
-        .map(|stack| stack.join("").replace(".", "").chars().rev().collect::<Vec<_>>())
-        .collect::<Vec<_>>();
-
+    let skip_lines = stacks.len() + 2; // stack spec + stack num + blank
     let operations = input
         .lines()
         .skip(skip_lines)
         .map(|line| {
-            let (count, from, to) = sscanf!(line, "move {} from {} to {}", usize, usize, usize).unwrap();
-            Operation {count, from: from - 1, to: to - 1} // 1-index to 0-index for Vec
+            let (count, from, to) =
+                sscanf!(line, "move {} from {} to {}", usize, usize, usize).unwrap();
+            Operation {
+                count,
+                from: from - 1,
+                to: to - 1,
+            } // 1-index to 0-index for Vec
         })
         .collect::<Vec<_>>();
 
-    stacks.iter().for_each(|stack| eprintln!("{:?}", stack));
-    let mut p1_stack = stacks.clone();
+    // transpose and remove empty slots
+    let mut stacks = transpose(stacks)
+        .into_iter()
+        .map(|stack| {
+            stack
+                .into_iter()
+                .filter(|c| *c != ' ')
+                .rev()
+                .collect::<Vec<_>>()
+        })
+        .filter(|stack| !stack.is_empty())
+        .collect::<Vec<_>>();
+
+    let mut p1_stacks = stacks.clone();
     for op in operations.iter() {
-        // eprintln!("move {} from {} to {}", op.count, op.from + 1, op.to + 1);
-        // stacks.iter().for_each(|stack| eprintln!("{:?}", stack));
         for _ in 0..op.count {
-            let mov = p1_stack[op.from].pop().unwrap();
-            p1_stack[op.to].push(mov);
+            let mov = p1_stacks[op.from].pop().unwrap();
+            p1_stacks[op.to].push(mov);
         }
     }
 
-    let p1 = stacks
+    let p1 = p1_stacks
         .iter()
         .map(|stack| stack.last().unwrap())
         .collect::<String>();
 
     for op in operations {
-        eprintln!("move {} from {} to {}", op.count, op.from + 1, op.to + 1);
-        stacks.iter().for_each(|stack| eprintln!("{:?}", stack));
         let from = &mut stacks[op.from];
         let mut tail = from.split_off(from.len() - op.count);
         stacks[op.to].append(&mut tail);
