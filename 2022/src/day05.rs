@@ -18,7 +18,7 @@ struct Operation {
     to: usize,
 }
 
-pub fn run(input: &'static str) -> (String, usize) {
+pub fn run(input: &'static str) -> (String, String) {
     let mut stacks = input
         .lines()
         .take_while(|line| !line.is_empty())
@@ -35,14 +35,8 @@ pub fn run(input: &'static str) -> (String, usize) {
     let skip_lines = stacks.len() + 1;
     stacks.pop(); // pop last row which has stack numbers
 
-    stacks.iter().for_each(|stack| eprintln!("{:?}", stack));
-
     // transpose and remove empty slots
-    let mut stacks = transpose(stacks);
-
-    stacks.iter().for_each(|stack| eprintln!("{:?}", stack));
-
-    let mut stacks = stacks
+    let mut stacks = transpose(stacks)
         .iter_mut()
         .map(|stack| stack.join("").replace(".", "").chars().rev().collect::<Vec<_>>())
         .collect::<Vec<_>>();
@@ -57,21 +51,35 @@ pub fn run(input: &'static str) -> (String, usize) {
         .collect::<Vec<_>>();
 
     stacks.iter().for_each(|stack| eprintln!("{:?}", stack));
-    for op in operations {
-        eprintln!("move {} from {} to {}", op.count, op.from + 1, op.to + 1);
-        stacks.iter().for_each(|stack| eprintln!("{:?}", stack));
+    let mut p1_stack = stacks.clone();
+    for op in operations.iter() {
+        // eprintln!("move {} from {} to {}", op.count, op.from + 1, op.to + 1);
+        // stacks.iter().for_each(|stack| eprintln!("{:?}", stack));
         for _ in 0..op.count {
-            let mov = stacks[op.from].pop().unwrap();
-            stacks[op.to].push(mov);
+            let mov = p1_stack[op.from].pop().unwrap();
+            p1_stack[op.to].push(mov);
         }
     }
 
     let p1 = stacks
+        .iter()
+        .map(|stack| stack.last().unwrap())
+        .collect::<String>();
+
+    for op in operations {
+        eprintln!("move {} from {} to {}", op.count, op.from + 1, op.to + 1);
+        stacks.iter().for_each(|stack| eprintln!("{:?}", stack));
+        let from = &mut stacks[op.from];
+        let mut tail = from.split_off(from.len() - op.count);
+        stacks[op.to].append(&mut tail);
+    }
+
+    let p2 = stacks
         .into_iter()
         .map(|mut stack| stack.pop().unwrap())
         .collect::<String>();
 
-    (p1, 0)
+    (p1, p2)
 }
 
 #[test]
@@ -86,5 +94,5 @@ move 3 from 1 to 3
 move 2 from 2 to 1
 move 1 from 1 to 2
 ";
-    assert_eq!(run(input), ("CMZ".to_owned(), 0));
+    assert_eq!(run(input), ("CMZ".to_owned(), "MCD".to_owned()));
 }
