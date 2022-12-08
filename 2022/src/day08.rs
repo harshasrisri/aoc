@@ -1,6 +1,5 @@
-use std::cmp::Ordering;
-
 use itertools::Itertools;
+use std::cmp::Ordering;
 
 fn transpose<T>(input: Vec<Vec<T>>) -> Vec<Vec<T>>
 where
@@ -20,31 +19,37 @@ pub fn run(input: &'static str) -> (usize, usize) {
                 .collect::<Vec<usize>>()
         })
         .collect::<Vec<_>>();
-
     let tree_cols = transpose(tree_rows.clone());
-    let mut visible = tree_rows.len() * 2 + tree_cols.len() * 2 - 4;
+
+    let mut num_visible = tree_rows.len() * 2 + tree_cols.len() * 2 - 4;
     let mut max_score = 0;
 
     for ((x, row), (y, col)) in tree_rows
         .iter()
         .enumerate()
-        .cartesian_product(tree_cols.iter().enumerate())
+        .skip(1)
+        .take(tree_rows.len() - 2)
+        .cartesian_product(
+            tree_cols
+                .iter()
+                .enumerate()
+                .skip(1)
+                .take(tree_cols.len() - 2),
+        )
     {
-        if x == 0 || y == 0 || x == row.len() - 1 || y == col.len() - 1 {
-            continue;
-        }
-
-        assert_eq!(row[y], col[x]);
+        // Iterators for left, right, up and down from a particular tree till the edge
+        let lt = row.get(0..y).unwrap().iter().rev();
+        let rt = row.get(y + 1..).unwrap().iter();
+        let up = col.get(0..x).unwrap().iter().rev();
+        let dn = col.get(x + 1..).unwrap().iter();
 
         let tree_height = row[y];
-        let lt = *row.get(0..y).unwrap().iter().max().unwrap() < tree_height;
-        let rt = *row.get(y + 1..).unwrap().iter().max().unwrap() < tree_height;
-        let up = *col.get(0..x).unwrap().iter().max().unwrap() < tree_height;
-        let dn = *col.get(x + 1..).unwrap().iter().max().unwrap() < tree_height;
-        if lt || rt || up || dn {
-            visible += 1;
-        }
-        // eprintln!("[{},{}] == {} == {} ({})", x, y, row[y], col[x], visible);
+        let mut visible = false;
+        visible |= lt.clone().max().unwrap() < &tree_height;
+        visible |= rt.clone().max().unwrap() < &tree_height;
+        visible |= up.clone().max().unwrap() < &tree_height;
+        visible |= dn.clone().max().unwrap() < &tree_height;
+        num_visible += visible as usize;
 
         let height_score = |skip, count, height: usize| -> (bool, usize) {
             match (skip, height.cmp(&tree_height)) {
@@ -55,46 +60,16 @@ pub fn run(input: &'static str) -> (usize, usize) {
             }
         };
 
-        let lt = row
-            .get(0..y)
-            .unwrap()
-            .iter()
-            .rev()
-            .fold((false, 0), |(skip, count), height| {
-                height_score(skip, count, *height)
-            })
-            .1;
-        let rt = row
-            .get(y+1..)
-            .unwrap()
-            .iter()
-            .fold((false, 0), |(skip, count), height| {
-                height_score(skip, count, *height)
-            })
-            .1;
-        let up = col
-            .get(0..x)
-            .unwrap()
-            .iter()
-            .rev()
-            .fold((false, 0), |(skip, count), height| {
-                height_score(skip, count, *height)
-            })
-            .1;
-        let dn = col
-            .get(x+1..)
-            .unwrap()
-            .iter()
-            .fold((false, 0), |(skip, count), height| {
-                height_score(skip, count, *height)
-            })
-            .1;
+        let mut score = 1;
+        score *= lt.fold((false, 0), |(skip, count), height| height_score(skip, count, *height) ).1;
+        score *= rt.fold((false, 0), |(skip, count), height| height_score(skip, count, *height) ).1;
+        score *= up.fold((false, 0), |(skip, count), height| height_score(skip, count, *height) ).1;
+        score *= dn.fold((false, 0), |(skip, count), height| height_score(skip, count, *height) ).1;
 
-        max_score = max_score.max(lt * rt * up * dn);
-        eprintln!( "[{x},{y}] == {} ({lt}, {rt}, {up}, {dn}, {max_score})", row[y]);
+        max_score = max_score.max(score);
     }
 
-    (visible, max_score)
+    (num_visible, max_score)
 }
 
 #[test]
