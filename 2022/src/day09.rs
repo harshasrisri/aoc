@@ -30,33 +30,12 @@ impl Rope {
         let mut head = &self.points[0];
         for i in 1..self.points.len() {
             let tail = &self.points[i];
-            self.points[i] = match (head.x - tail.x, head.y - tail.y) {
-                (0, 0) => Point { x: tail.x, y: tail.y},
-                (1, 0) => Point { x: tail.x, y: tail.y},
-                (-1, 0) => Point { x: tail.x, y: tail.y},
-                (0, 1) => Point { x: tail.x, y: tail.y},
-                (0, -1) => Point { x: tail.x, y: tail.y},
-                (1, 1) => Point { x: tail.x, y: tail.y},
-                (-1, -1) => Point { x: tail.x, y: tail.y},
-                (1, -1) => Point { x: tail.x, y: tail.y},
-                (-1, 1) => Point { x: tail.x, y: tail.y},
-                (-1, 2) => Point { x: tail.x - 1, y: tail.y + 1},  // 11'o clock
-                (0, 2) => Point { x: tail.x, y: tail.y + 1},       // 12'o clock
-                (1, 2) => Point { x: tail.x + 1, y: tail.y + 1},   // 01'o clock
-                (2, 2) => Point { x: tail.x + 1, y: tail.y + 1},
-                (2, 1) => Point { x: tail.x + 1, y: tail.y + 1},   // 02'o clock
-                (2, 0) => Point { x: tail.x + 1, y: tail.y},       // 03'o clock
-                (2, -1) => Point { x: tail.x + 1, y: tail.y - 1},  // 04'o clock
-                (2, -2) => Point { x: tail.x + 1, y: tail.y - 1},
-                (1, -2) => Point { x: tail.x + 1, y: tail.y - 1},  // 05'o clock
-                (0, -2) => Point { x: tail.x, y: tail.y - 1},      // 06'o clock
-                (-1, -2) => Point { x: tail.x - 1, y: tail.y - 1}, // 07'o clock
-                (-2, -2) => Point { x: tail.x - 1, y: tail.y - 1},
-                (-2, -1) => Point { x: tail.x - 1, y: tail.y - 1}, // 08'o clock
-                (-2, 0) => Point { x: tail.x - 1, y: tail.y},      // 09'o clock
-                (-2, 1) => Point { x: tail.x - 1, y: tail.y + 1},  // 10'o clock
-                (-2, 2) => Point { x: tail.x - 1, y: tail.y + 1},
-                x => panic!("Invalid distance {},{}", x.0, x.1),
+            let reduce = |d: isize| { d.cmp(&0) as isize };
+            let (dx, dy) = (head.x - tail.x, head.y - tail.y);
+            self.points[i] = match (dx.abs(), dy.abs()) {
+                (adx, ady) if adx < 2 && ady < 2 => Point { x: tail.x, y: tail.y},
+                (adx, ady) if adx <= 2 || ady <= 2 => Point { x: tail.x + reduce(dx), y: tail.y + reduce(dy)},
+                (x, y) => panic!("Invalid distance {x},{y}"),
             };
             head = &self.points[i];
         }
