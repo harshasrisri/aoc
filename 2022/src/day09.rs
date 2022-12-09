@@ -1,44 +1,38 @@
-use std::collections::HashSet;
 use sscanf::sscanf;
+use std::collections::HashSet;
 
-#[derive(Default, Debug, Clone, Hash, Eq, PartialEq)]
-struct Point {
-    x: isize,
-    y: isize,
-}
-
-#[derive(Default, Clone, Debug)]
 struct Rope {
-    points: Vec<Point>,
+    points: Vec<(isize, isize)>,
 }
 
 impl Rope {
     fn new(points: usize) -> Rope {
-        Rope { points: vec![ Point::default(); points ] }
+        Rope {
+            points: vec![(0, 0); points],
+        }
     }
 
-    fn move_head(&mut self, dir: char) -> Point {
+    fn move_head(&mut self, dir: char) -> (isize, isize) {
         let head = &self.points[0];
         self.points[0] = match dir {
-            'L' => Point { x: head.x + 1, y: head.y },
-            'R' => Point { x: head.x - 1, y: head.y },
-            'U' => Point { x: head.x    , y: head.y + 1 },
-            'D' => Point { x: head.x    , y: head.y - 1 },
-            x => panic!("Invalid dir {x}") ,
+            'L' => (head.0 + 1, head.1),
+            'R' => (head.0 - 1, head.1),
+            'U' => (head.0, head.1 + 1),
+            'D' => (head.0, head.1 - 1),
+            x => panic!("Invalid dir {x}"),
         };
 
-        let mut head = &self.points[0];
-        for i in 1..self.points.len() {
-            let tail = &self.points[i];
-            let reduce = |d: isize| { d.cmp(&0) as isize };
-            let (dx, dy) = (head.x - tail.x, head.y - tail.y);
-            self.points[i] = match (dx.abs(), dy.abs()) {
-                (adx, ady) if adx < 2 && ady < 2 => Point { x: tail.x, y: tail.y},
-                (adx, ady) if adx <= 2 || ady <= 2 => Point { x: tail.x + reduce(dx), y: tail.y + reduce(dy)},
+        let mut head = self.points[0];
+        self.points.iter_mut().skip(1).for_each(|tail| {
+            let reduce = |d: isize| d.cmp(&0) as isize;
+            let (dx, dy) = (head.0 - tail.0, head.1 - tail.1);
+            (tail.0, tail.1) = match (dx.abs(), dy.abs()) {
+                (adx, ady) if adx < 2 && ady < 2 => (tail.0, tail.1),
+                (adx, ady) if adx <= 2 || ady <= 2 => (tail.0 + reduce(dx), tail.1 + reduce(dy)),
                 (x, y) => panic!("Invalid distance {x},{y}"),
             };
-            head = &self.points[i];
-        }
+            head = *tail;
+        });
         self.points.last().cloned().unwrap()
     }
 }
@@ -54,7 +48,6 @@ pub fn run(input: &'static str) -> (usize, usize) {
 
     let mut rope = Rope::new(2);
     let p1 = head_moves
-        .as_str()
         .chars()
         .map(|dir| rope.move_head(dir))
         .collect::<HashSet<_>>()
@@ -62,7 +55,6 @@ pub fn run(input: &'static str) -> (usize, usize) {
 
     let mut long_rope = Rope::new(10);
     let p2 = head_moves
-        .as_str()
         .chars()
         .map(|dir| long_rope.move_head(dir))
         .collect::<HashSet<_>>()
