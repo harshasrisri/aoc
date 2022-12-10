@@ -35,13 +35,6 @@ pub fn run(input: &'static str) -> (usize, usize) {
         .step_by(40)
         .sum::<isize>();
 
-    let make_line = |bitmap: Vec<bool>| {
-        bitmap
-            .into_iter()
-            .map(|bit| if bit { '#' } else { '.' })
-            .collect::<String>()
-    };
-
     let mut sprite_pos = 1;
     op_iter
         .chunks(40)
@@ -59,7 +52,11 @@ pub fn run(input: &'static str) -> (usize, usize) {
                 })
         })
         .for_each(|crt_line| {
-            eprintln!("{}", make_line(crt_line));
+            let crt_line = crt_line
+                .into_iter()
+                .map(|bit| if bit { '█' } else { ' ' })
+                .collect::<String>();
+            eprintln!("{}", crt_line);
         });
 
     (p1 as usize, 0)
