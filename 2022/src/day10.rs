@@ -1,3 +1,7 @@
+use std::iter;
+
+use itertools::Itertools;
+
 #[derive(Debug, Clone)]
 enum Op {
     Noop,
@@ -15,16 +19,17 @@ pub fn run(input: &'static str) -> (usize, usize) {
                 vec![Op::Noop, op]
             }
         });
+    // eprintln!("ops: {}", op_iter.clone().count());
 
     let mut cumulation = 1;
-    let sums = std::iter::repeat(Op::Noop).take(1).chain(op_iter)
+    let sums = iter::repeat(Op::Noop).take(1).chain(op_iter.clone())
         .zip(1..)
         .map(|(op, cycle)| {
             cumulation += match op {
                 Op::Noop => 0,
                 Op::Addx(x) => x,
             };
-            eprintln!("{cycle}, {cumulation}, {:?}", op);
+            // eprintln!("{cycle}, {cumulation}, {:?}", op);
             cumulation * cycle as isize
         })
         .collect::<Vec<_>>();
@@ -33,8 +38,45 @@ pub fn run(input: &'static str) -> (usize, usize) {
         .into_iter()
         .skip(19)
         .step_by(40)
-        .inspect(|signal| eprintln!("signal: {signal}"))
+        // .inspect(|signal| eprintln!("signal: {signal}"))
         .sum::<isize>();
+
+    let make_sprite_at = |pos: isize| -> Vec<bool> { 
+        let pos = pos as usize;
+        if (1..39).contains(&pos) {
+            let prefix = iter::repeat(false).take(pos - 1);
+            let sprite = iter::repeat(true).take(3);
+            let suffix = iter::repeat(false).take(40 - pos - 2);
+            prefix.chain(sprite).chain(suffix).collect()
+        } else {
+            iter::repeat(false).take(40).collect()
+        }
+    };
+
+    let make_line = |bitmap: Vec<bool>| { bitmap.into_iter().map(|bit| if bit { '#' } else { '.' }).collect::<String>() };
+
+    let mut sprite_pos = 1;
+    // eprintln!("000: {} - Start", make_sprite_at(sprite_pos).into_iter().map(|print| if print { '#' } else { '.' }).collect::<String>());
+    let crt_lines = op_iter
+        .collect::<Vec<_>>()
+        .chunks(40)
+        .map(|chunk| {
+            chunk
+                .into_iter()
+                .enumerate()
+                .fold(vec![false; 40], |mut crt, (cycle, op)| {
+                    crt[cycle] = [sprite_pos - 1, sprite_pos, sprite_pos + 1].contains(&(cycle as isize));
+                    if let Op::Addx(n) = op {
+                        sprite_pos += n;
+                    }
+                    crt
+            // eprintln!("{:03}: {} - {:?}", cycle, make_sprite_at(sprite_pos).into_iter().map(|print| if print { '#' } else { '.' }).collect::<String>(), op);
+                })
+        })
+        .for_each(|crt_line| {
+            eprintln!("{}", make_line(crt_line));
+        });
+
 
     (p1 as usize, 0)
 }
