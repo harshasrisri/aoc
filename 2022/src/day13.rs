@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use std::{cmp::Ordering, str::FromStr};
+use std::cmp::Ordering;
 
 #[derive(Debug, PartialEq, PartialOrd, Deserialize)]
 #[serde(untagged)]
@@ -27,22 +27,14 @@ impl List {
     }
 }
 
-impl FromStr for List {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        serde_json::from_str(s).map_err(|e| e.to_string())
-    }
-}
-
 pub fn run(input: &'static str) -> (usize, usize) {
     let list: Vec<_> = input
         .split("\n\n")
         .map(|pair| {
             let (left, right) = pair.split_once('\n').unwrap();
             (
-                List::from_str(left).unwrap(),
-                List::from_str(right).unwrap(),
+                serde_json::from_str::<List>(left).unwrap(),
+                serde_json::from_str::<List>(right).unwrap(),
             )
         })
         .collect();
@@ -62,13 +54,13 @@ pub fn run(input: &'static str) -> (usize, usize) {
     let mut list: Vec<_> = list.into_iter().flat_map(|(l, r)| vec![l, r]).collect();
     list.sort_by(|a, b| a.compare(b));
 
-    let div1 = List::from_str("[[2]]").unwrap();
+    let div1 = serde_json::from_str::<List>("[[2]]").unwrap();
     let ins1 = list
         .binary_search_by(|item| item.compare(&div1))
         .unwrap_err();
     list.insert(ins1, div1);
 
-    let div2 = List::from_str("[[6]]").unwrap();
+    let div2 = serde_json::from_str::<List>("[[6]]").unwrap();
     let ins2 = list
         .binary_search_by(|item| item.compare(&div2))
         .unwrap_err();
