@@ -1,7 +1,7 @@
-use std::{str::FromStr, cmp::Ordering};
-use serde::{Serialize, Deserialize};
+use serde::Deserialize;
+use std::{cmp::Ordering, str::FromStr};
 
-#[derive(Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, PartialOrd, Deserialize)]
 #[serde(untagged)]
 enum List {
     Num(usize),
@@ -10,8 +10,6 @@ enum List {
 
 impl List {
     fn compare(&self, right: &Self) -> Ordering {
-        eprintln!("\nleft: {:?}", self);
-        eprintln!("right: {:?}", right);
         match (self, right) {
             (List::Num(l), List::Num(r)) => l.cmp(r),
             (List::Num(l), List::List(_r)) => List::List(vec![List::Num(*l)]).compare(right),
@@ -22,12 +20,6 @@ impl List {
                         Ordering::Equal => continue,
                         ordering => return ordering,
                     }
-                    //     eprintln!("in order: {:?}, {:?}", left, right);
-                    //     return true;
-                    // } else {
-                    //     eprintln!("not in order: {:?}, {:?}", left, right);
-                    //     continue;
-                    // }
                 }
                 l.len().cmp(&r.len())
             }
@@ -48,20 +40,43 @@ pub fn run(input: &'static str) -> (usize, usize) {
         .split("\n\n")
         .map(|pair| {
             let (left, right) = pair.split_once('\n').unwrap();
-            (List::from_str(&left).unwrap(), List::from_str(&right).unwrap())
+            (
+                List::from_str(left).unwrap(),
+                List::from_str(right).unwrap(),
+            )
         })
         .collect();
-
 
     let p1 = list
         .iter()
         .zip(1..)
         .filter_map(|((left, right), index)| {
-            if left.compare(right) == Ordering::Less { Some(index) } else { None }
+            if left.compare(right) == Ordering::Less {
+                Some(index)
+            } else {
+                None
+            }
         })
         .sum();
 
-    (p1, 0)
+    let mut list: Vec<_> = list.into_iter().flat_map(|(l, r)| vec![l, r]).collect();
+    list.sort_by(|a, b| a.compare(b));
+
+    let div1 = List::from_str("[[2]]").unwrap();
+    let ins1 = list
+        .binary_search_by(|item| item.compare(&div1))
+        .unwrap_err();
+    list.insert(ins1, div1);
+
+    let div2 = List::from_str("[[6]]").unwrap();
+    let ins2 = list
+        .binary_search_by(|item| item.compare(&div2))
+        .unwrap_err();
+    list.insert(ins2, div2);
+
+    let p2 = (ins1 + 1) * (ins2 + 1);
+
+    (p1, p2)
 }
 
 #[test]
@@ -91,6 +106,5 @@ fn test() {
 [1,[2,[3,[4,[5,6,7]]]],8,9]
 [1,[2,[3,[4,[5,6,0]]]],8,9]
 ";
-    assert_eq!(run(input), (13 ,0));
+    assert_eq!(run(input), (13, 140));
 }
-

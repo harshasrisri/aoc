@@ -27,7 +27,8 @@ impl Operation {
             Operation::Add(n) => input.rem(divisor) + n.rem(divisor),
             Operation::Mul(n) => input.rem(divisor) * n.rem(divisor),
             Operation::Square => input.rem(divisor) * input.rem(divisor),
-        }.rem(divisor)
+        }
+        .rem(divisor)
     }
 
     fn operate(&self, input: usize) -> usize {
