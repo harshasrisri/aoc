@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 
-use itertools::Itertools;
 use sscanf::sscanf;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -38,42 +37,43 @@ impl SBPair {
     }
 }
 
-pub fn run(input: &'static str) -> (usize, usize) {
-    let (mut xmn, mut xmx, mut ymn, mut ymx) = (0, 0, 0, 0);
-    let sb_map = input
-        .lines()
-        .map(|line| sscanf!(line, "Sensor at x={isize}, y={isize}: closest beacon is at x={isize}, y={isize}").unwrap())
-        .map(|(sx, sy, bx, by)| SBPair::from_ends(Point::from_xy(sx, sy), Point::from_xy(bx, by)))
-        // .inspect(|sb| eprintln!("Parsed: {:?}", sb))
-        .inspect(|sb| {
-            xmn = xmn.min(sb.sensor.x - sb.man_dist as isize);
-            xmx = xmx.max(sb.sensor.x + sb.man_dist as isize);
-            ymn = ymn.min(sb.sensor.y - sb.man_dist as isize);
-            ymx = ymx.max(sb.sensor.y + sb.man_dist as isize);
-        })
-        .collect::<Vec<_>>();
 
-    // eprintln!("{xmn}, {xmx}, {ymn}, {ymx}");
-    
-    let hline = if cfg!(test) {
-        10
-    } else {
-        2000000
-    };
+const P1_HLINE: isize = if cfg!(test) { 10 } else { 2000000 };
 
+fn p1(sb_map: &[SBPair]) -> usize {
     let beacons_on_hline = sb_map
         .iter()
-        .filter_map(|sb| if sb.beacon.y == hline { Some(sb.beacon.clone()) } else { None })
+        .filter_map(|sb| if sb.beacon.y == P1_HLINE { Some(sb.beacon.clone()) } else { None })
         .collect::<HashSet<_>>()
         .len();
 
     let points_on_hline = sb_map
         .iter()
-        .flat_map(|sb| sb.points_on_hline(hline))
+        .flat_map(|sb| sb.points_on_hline(P1_HLINE))
         .collect::<HashSet<_>>()
         .len();
 
-    (points_on_hline - beacons_on_hline, 0)
+    points_on_hline - beacons_on_hline
+}
+
+pub fn run(input: &'static str) -> (usize, usize) {
+    // let (mut xmn, mut xmx, mut ymn, mut ymx) = (0, 0, 0, 0);
+    let sb_map = input
+        .lines()
+        .map(|line| sscanf!(line, "Sensor at x={isize}, y={isize}: closest beacon is at x={isize}, y={isize}").unwrap())
+        .map(|(sx, sy, bx, by)| SBPair::from_ends(Point::from_xy(sx, sy), Point::from_xy(bx, by)))
+        // .inspect(|sb| eprintln!("Parsed: {:?}", sb))
+        // .inspect(|sb| {
+        //     xmn = xmn.min(sb.sensor.x - sb.man_dist as isize);
+        //     xmx = xmx.max(sb.sensor.x + sb.man_dist as isize);
+        //     ymn = ymn.min(sb.sensor.y - sb.man_dist as isize);
+        //     ymx = ymx.max(sb.sensor.y + sb.man_dist as isize);
+        // })
+        .collect::<Vec<_>>();
+
+    // eprintln!("{xmn}, {xmx}, {ymn}, {ymx}");
+    
+    (p1(&sb_map), 0)
 }
 
 #[test]
