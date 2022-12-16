@@ -28,11 +28,7 @@ struct SBPair {
 impl SBPair {
     fn from_ends(sensor: Point, beacon: Point) -> SBPair {
         let man_dist = sensor.man_dist(&beacon);
-        SBPair {
-            sensor,
-            beacon,
-            man_dist,
-        }
+        SBPair { sensor, beacon, man_dist }
     }
 
     fn points_on_hline(&self, y: isize) -> RangeInclusive<isize> {
@@ -44,22 +40,14 @@ impl SBPair {
         let overshoot = self.man_dist as isize - self.sensor.y.abs_diff(line) as isize;
         let start = point.max(self.sensor.x - overshoot);
         let end = self.sensor.x + overshoot;
-        if start <= end {
-            Some(start..=end)
-        } else {
-            None
-        }
+        if start <= end { Some(start..=end) } else { None }
     }
 
     fn points_on_vline_below(&self, line: isize, point: isize) -> Option<RangeInclusive<isize>> {
         let overshoot = self.man_dist as isize - self.sensor.x.abs_diff(line) as isize;
         let start = point.max(self.sensor.y - overshoot);
         let end = self.sensor.y + overshoot;
-        if start <= end {
-            Some(start..=end)
-        } else {
-            None
-        }
+        if start <= end { Some(start..=end) } else { None }
     }
 }
 
@@ -68,13 +56,7 @@ const P1_HLINE: isize = if cfg!(test) { 10 } else { 2000000 };
 fn p1(sb_map: &[SBPair]) -> usize {
     let beacons_on_hline = sb_map
         .iter()
-        .filter_map(|sb| {
-            if sb.beacon.y == P1_HLINE {
-                Some(sb.beacon.clone())
-            } else {
-                None
-            }
-        })
+        .filter_map(|sb| if sb.beacon.y == P1_HLINE { Some(sb.beacon.clone()) } else { None } )
         .collect::<HashSet<_>>()
         .len();
 
@@ -95,9 +77,7 @@ struct Ranges {
 
 impl Ranges {
     fn from_range(range: RangeInclusive<isize>) -> Ranges {
-        Ranges {
-            ranges: vec![GenericRange::from(range)],
-        }
+        Ranges { ranges: vec![GenericRange::from(range)] }
     }
 
     fn remove(&mut self, hole: RangeInclusive<isize>) {
@@ -131,13 +111,8 @@ fn p2(sb_map: &[SBPair]) -> usize {
 
         // Then remove the points occupied by each sensor-beacon pair along given row/col
         for sb in sb_map {
-            if let Some(r) = sb.points_on_hline_right_of(d, d) {
-                row_occ.remove(r);
-            }
-
-            if let Some(c) = sb.points_on_vline_below(d, d) {
-                col_occ.remove(c);
-            }
+            sb.points_on_hline_right_of(d, d).map(|r| row_occ.remove(r)).unwrap_or_default();
+            sb.points_on_vline_below(d, d).map(|r| col_occ.remove(r)).unwrap_or_default();
         }
 
         // a row/col should be full consumed, or have no more than a single hole
@@ -148,14 +123,14 @@ fn p2(sb_map: &[SBPair]) -> usize {
             // 1 hole on our row
             (1, 0) => {
                 let hole = row_occ.ranges.pop().unwrap();
-                assert!( hole.is_singleton(), "remaining region not a singleton: {:?}", hole);
+                assert!(hole.is_singleton(), "remaining region not a singleton: {:?}", hole);
                 (b_row, b_col) = (Some(hole.into_iter().next().unwrap()), Some(d));
             }
 
             // 1 hole on our col
             (0, 1) => {
                 let hole = col_occ.ranges.pop().unwrap();
-                assert!( hole.is_singleton(), "remaining region not a singleton: {:?}", hole);
+                assert!(hole.is_singleton(), "remaining region not a singleton: {:?}", hole);
                 (b_row, b_col) = (Some(d), Some(hole.into_iter().next().unwrap()));
             }
 
@@ -163,9 +138,9 @@ fn p2(sb_map: &[SBPair]) -> usize {
             (1, 1) => {
                 let row_hole = row_occ.ranges.pop().unwrap();
                 let col_hole = col_occ.ranges.pop().unwrap();
-                assert!( row_hole.is_singleton() && col_hole.is_singleton(), "remaining regions not singletons: {:?}, {:?}", row_hole, col_hole);
-                assert_eq!( row_hole.into_iter().next().unwrap(), d, "row intersection is not along diagonal");
-                assert_eq!( col_hole.into_iter().next().unwrap(), d, "col intersection is not along diagonal");
+                assert!(row_hole.is_singleton() && col_hole.is_singleton(), "remaining regions not singletons: {:?}, {:?}", row_hole, col_hole);
+                assert_eq!(row_hole.into_iter().next().unwrap(), d, "row intersection is not along diagonal");
+                assert_eq!(col_hole.into_iter().next().unwrap(), d, "col intersection is not along diagonal");
                 (b_row, b_col) = (Some(d), Some(d));
             }
 
@@ -182,13 +157,7 @@ fn p2(sb_map: &[SBPair]) -> usize {
 pub fn run(input: &'static str) -> (usize, usize) {
     let sb_map = input
         .lines()
-        .map(|line| {
-            sscanf!(
-                line,
-                "Sensor at x={isize}, y={isize}: closest beacon is at x={isize}, y={isize}"
-            )
-            .unwrap()
-        })
+        .map(|line| sscanf!(line, "Sensor at x={isize}, y={isize}: closest beacon is at x={isize}, y={isize}").unwrap())
         .map(|(sx, sy, bx, by)| SBPair::from_ends(Point::from_xy(sx, sy), Point::from_xy(bx, by)))
         .collect::<Vec<_>>();
 
