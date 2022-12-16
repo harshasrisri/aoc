@@ -38,18 +38,18 @@ pub fn run(input: &'static str) -> (usize, usize) {
     let grid: Vec<Vec<char>> = input
         .lines()
         .enumerate()
-        .map(|(row, line)| line
-            .trim()
-            .chars()
-            .enumerate()
-            .map(|(col, ch)| {
-                if ch == 'S' { 
-                    (r,c) = (row, col); 
-                }
-                ch
-            })
-            .collect()
-        )
+        .map(|(row, line)| {
+            line.trim()
+                .chars()
+                .enumerate()
+                .map(|(col, ch)| {
+                    if ch == 'S' {
+                        (r, c) = (row, col);
+                    }
+                    ch
+                })
+                .collect()
+        })
         .collect();
 
     let p1 = traverse(&grid, r, c).unwrap();
@@ -66,5 +66,5 @@ accszExk
 acctuvwj
 abdefghi
 ";
-    assert_eq!(run(input), (31,0));
+    assert_eq!(run(input), (31, 0));
 }

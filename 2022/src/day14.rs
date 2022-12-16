@@ -71,7 +71,10 @@ impl Map {
             })
             .inspect(|p| floor = floor.max(p.y))
             .collect();
-        Map { occupied, floor: floor + 2 }
+        Map {
+            occupied,
+            floor: floor + 2,
+        }
     }
 
     fn contains(&self, p: &Point, floor: bool) -> bool {
@@ -135,15 +138,20 @@ impl Map {
     }
 
     fn print(&self, floor: bool) {
-        let (xmn, xmx, ymn, ymx) = self.occupied
-            .iter()
-            .fold((usize::MAX, usize::MIN, usize::MAX, usize::MIN), |(xmn, xmx, ymn, ymx), p| {
-                (xmn.min(p.x), xmx.max(p.x), ymn.min(p.y), ymx.max(p.y))
-            });
+        let (xmn, xmx, ymn, ymx) = self.occupied.iter().fold(
+            (usize::MAX, usize::MIN, usize::MAX, usize::MIN),
+            |(xmn, xmx, ymn, ymx), p| (xmn.min(p.x), xmx.max(p.x), ymn.min(p.y), ymx.max(p.y)),
+        );
         let map = (xmn..=xmx)
             .into_iter()
             .cartesian_product((ymn..=ymx).into_iter())
-            .map(|(x, y)| if self.contains(&Point{x, y}, floor) { 'O' } else { '.' })
+            .map(|(x, y)| {
+                if self.contains(&Point { x, y }, floor) {
+                    'O'
+                } else {
+                    '.'
+                }
+            })
             .collect::<Vec<char>>()
             .chunks(xmx - xmn)
             .map(|ch| ch.into_iter().collect::<String>())
@@ -155,10 +163,14 @@ impl Map {
 pub fn run(input: &'static str) -> (usize, usize) {
     let mut bitmap = Map::from_str(input);
     // bitmap.occupied.iter().for_each(|p| eprintln!("{:?}", p));
-    let p1 = (1..).take_while(|_| bitmap.add_sand(false).is_some()).count();
+    let p1 = (1..)
+        .take_while(|_| bitmap.add_sand(false).is_some())
+        .count();
     bitmap.print(false);
     eprintln!("======= Part 2 =======");
-    let p2 = (1..).take_while(|_| bitmap.add_sand(true).is_some()).count();
+    let p2 = (1..)
+        .take_while(|_| bitmap.add_sand(true).is_some())
+        .count();
     // bitmap.print(true);
 
     (p1, p2)

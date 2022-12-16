@@ -1,5 +1,6 @@
-use std::{collections::HashSet, ops::RangeInclusive};
+use ranges::{GenericRange, OperationResult};
 use sscanf::sscanf;
+use std::{collections::HashSet, ops::RangeInclusive};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 struct Point {
@@ -27,7 +28,11 @@ struct SBPair {
 impl SBPair {
     fn from_ends(sensor: Point, beacon: Point) -> SBPair {
         let man_dist = sensor.man_dist(&beacon);
-        SBPair { sensor, beacon, man_dist }
+        SBPair {
+            sensor,
+            beacon,
+            man_dist,
+        }
     }
 
     fn contains(&self, point: &Point) -> bool {
@@ -68,59 +73,18 @@ impl SBPair {
     }
 }
 
-trait RangeOps {
-    fn coalesces_with(&self, other: &Self) -> bool;
-    fn coalesce(&self, other: &Self) -> Option<Self> where Self: Sized;
-    fn dmz(&self, other: &Self) -> Option<Self> where Self: Sized;
-    fn truncate(&self, start: isize, end: isize) -> Self;
-}
-
-impl RangeOps for RangeInclusive<isize> {
-    fn coalesces_with(&self, other: &Self) -> bool {
-        other.start() - self.end() <= 1 || self.start() - other.end() <= 1
-    }
-
-    fn coalesce(&self, other: &Self) -> Option<Self> where Self: Sized {
-        if !self.coalesces_with(&other) {
-            None
-        } else {
-            let start = self.start().min(other.start());
-            let end = self.end().max(other.end());
-            Some(*start..=*end)
-        }
-    }
-
-    fn dmz(&self, other: &Self) -> Option<Self> where Self: Sized {
-        if self.coalesces_with(&other) {
-            None
-        } else {
-            if self.end() < other.start() {
-                Some(self.end()+1..=other.start()-1)
-            } else if other.end() < self.start() {
-                Some(other.end()+1..=self.start()-1)
-            } else {
-                panic!("Invalid ranges for dmz: {:?} <=> {:?}", self, other)
-            }
-        }
-    }
-
-    fn truncate(&self, start: isize, end: isize) -> Self {
-        *self.start().max(&start)..=*self.end().min(&end)
-    }
-}
-
-#[derive(Debug)]
-enum RangeType {
-    Occ(RangeInclusive<isize>),
-    Dmz(RangeInclusive<isize>),
-}
-
 const P1_HLINE: isize = if cfg!(test) { 10 } else { 2000000 };
 
 fn p1(sb_map: &[SBPair]) -> usize {
     let beacons_on_hline = sb_map
         .iter()
-        .filter_map(|sb| if sb.beacon.y == P1_HLINE { Some(sb.beacon.clone()) } else { None })
+        .filter_map(|sb| {
+            if sb.beacon.y == P1_HLINE {
+                Some(sb.beacon.clone())
+            } else {
+                None
+            }
+        })
         .collect::<HashSet<_>>()
         .len();
 
@@ -133,13 +97,15 @@ fn p1(sb_map: &[SBPair]) -> usize {
     if cfg!(test) {
         for y in 0..=20 {
             for x in 0..=20 {
-                let point = Point {x, y};
-                eprint!("{}", 
-                        if sb_map.iter().any(|sb| sb.contains(&point)) {
-                            '.'
-                        } else {
-                            '#'
-                        })
+                let point = Point { x, y };
+                eprint!(
+                    "{}",
+                    if sb_map.iter().any(|sb| sb.contains(&point)) {
+                        '.'
+                    } else {
+                        '#'
+                    }
+                )
             }
             eprintln!();
         }
@@ -150,23 +116,28 @@ fn p1(sb_map: &[SBPair]) -> usize {
 
 const P2_RANGE: isize = if cfg!(test) { 20 } else { 4000000 };
 
-fn condense(ranges: Vec<RangeInclusive<isize>>) -> RangeType {
-    let mut first: Option<RangeInclusive<isize>> = None;
-    let mut second: Option<RangeInclusive<isize>> = None;
-    for range in ranges.into_iter() {
-        (first, second) = match (first, second) {
-            (None, None) => (Some(range), None),
-            (Some(f), None) if f.coalesces_with(&range) => (f.coalesce(&range), None),
-            (Some(f), None) if !f.coalesces_with(&range) => (Some(f), Some(range)),
-            (Some(f), Some(s)) => (Some(f), s.coalesce(&range)),
-            _ => panic!("Invalid range overlapping scenario"),
-        };
+struct Ranges {
+    ranges: Vec<GenericRange<isize>>,
+}
+
+impl Ranges {
+    fn from_range(range: RangeInclusive<isize>) -> Ranges {
+        Ranges {
+            ranges: vec![GenericRange::from(range)],
+        }
     }
-    match (first, second) {
-        (Some(f), None) => RangeType::Occ(f.truncate(0, P2_RANGE)),
-        (Some(f), Some(s)) if f.coalesces_with(&s) => RangeType::Occ(f.coalesce(&s).unwrap().truncate(0, P2_RANGE)),
-        (Some(f), Some(s)) if !f.coalesces_with(&s) => RangeType::Dmz(f.dmz(&s).unwrap().truncate(0, P2_RANGE)),
-        _ => panic!("Invalid range overlapping scenario"),
+
+    fn remove(&mut self, hole: RangeInclusive<isize>) {
+        let hole = GenericRange::from(hole);
+        self.ranges = self
+            .ranges
+            .iter()
+            .flat_map(|range| match range.difference(hole) {
+                OperationResult::Empty => vec![].into_iter(),
+                OperationResult::Single(r) => vec![r].into_iter(),
+                OperationResult::Double(l, r) => vec![l, r].into_iter(),
+            })
+            .collect::<Vec<_>>();
     }
 }
 
@@ -177,60 +148,80 @@ fn p2(sb_map: &[SBPair]) -> usize {
         if b_row.is_some() && b_col.is_some() {
             break;
         }
-
-        let mut row_occ = Vec::new();
-        let mut col_occ = Vec::new();
+        let mut row_occ = Ranges::from_range(d..=P2_RANGE);
+        let mut col_occ = Ranges::from_range(d..=P2_RANGE);
 
         for sb in sb_map {
-            if b_row.is_none() {
-                if let Some(r) = sb.points_on_hline_right_of(d, d) {
-                    row_occ.push(r);
-                }
+            if let Some(r) = sb.points_on_hline_right_of(d, d) {
+                row_occ.remove(r);
             }
 
-            if b_col.is_none() {
-                if let Some(c) = sb.points_on_vline_below(d, d) {
-                    col_occ.push(c);
-                }
+            if let Some(c) = sb.points_on_vline_below(d, d) {
+                col_occ.remove(c);
             }
         }
 
-        if b_row.is_none() {
-            row_occ.sort_by(|a, b| a.start().cmp(b.start()));
-            let row_occ = condense(row_occ);
-            b_row = match row_occ {
-                RangeType::Occ(r) if r.end() - r.start() == P2_RANGE - d => None,
-                RangeType::Occ(r) if r.start() != &d => Some(d),
-                RangeType::Occ(r) if r.end() != &P2_RANGE => Some(P2_RANGE),
-                RangeType::Dmz(r) if r.start() == r.end() => Some(*r.start()),
-                r => panic!("Invalid range overlapping scenario row: {:?}", r),
+        match (row_occ.ranges.len(), col_occ.ranges.len()) {
+            (0, 0) => continue,
+            (1, 0) => {
+                let remainder = row_occ.ranges.pop().unwrap();
+                assert!(
+                    remainder.is_singleton(),
+                    "remaining region not a singleton: {:?}",
+                    remainder
+                );
+                (b_row, b_col) = (Some(remainder.into_iter().next().unwrap()), Some(d));
             }
-        }
-
-        if b_col.is_none() {
-            col_occ.sort_by(|a, b| a.start().cmp(b.start()));
-            let col_occ = condense(col_occ);
-            b_col = match col_occ {
-                RangeType::Occ(r) if r.end() - r.start() == P2_RANGE - d => None,
-                RangeType::Occ(r) if r.start() != &d => Some(d),
-                RangeType::Occ(r) if r.end() != &P2_RANGE => Some(P2_RANGE),
-                RangeType::Dmz(r) if r.start() == r.end() => Some(*r.start()),
-                r => panic!("Invalid range overlapping scenario col: {:?}", r),
+            (0, 1) => {
+                let remainder = col_occ.ranges.pop().unwrap();
+                assert!(
+                    remainder.is_singleton(),
+                    "remaining region not a singleton: {:?}",
+                    remainder
+                );
+                (b_row, b_col) = (Some(d), Some(remainder.into_iter().next().unwrap()));
             }
+            (1, 1) => {
+                let row_rem = row_occ.ranges.pop().unwrap();
+                let col_rem = col_occ.ranges.pop().unwrap();
+                assert!(
+                    row_rem.is_singleton() && col_rem.is_singleton(),
+                    "remaining regions not singletons: {:?}, {:?}",
+                    row_rem,
+                    col_rem
+                );
+                assert_eq!(
+                    row_rem.into_iter().next().unwrap(),
+                    d,
+                    "row intersection is not along diagonal"
+                );
+                assert_eq!(
+                    col_rem.into_iter().next().unwrap(),
+                    d,
+                    "col intersection is not along diagonal"
+                );
+                (b_row, b_col) = (Some(d), Some(d));
+            }
+            (_, _) => panic!("Invalid number of ranges remaining"),
         }
     }
 
-    let (row, col) = (b_row.unwrap(), b_col.unwrap());
-    eprintln!("{row}, {col}");
+    let (row, col) = (b_row.unwrap() as usize, b_col.unwrap() as usize);
 
-    (row * P2_RANGE + col) as usize
+    row * 4000000 + col
 }
 
 pub fn run(input: &'static str) -> (usize, usize) {
     // let (mut xmn, mut xmx, mut ymn, mut ymx) = (0, 0, 0, 0);
     let mut sb_map = input
         .lines()
-        .map(|line| sscanf!(line, "Sensor at x={isize}, y={isize}: closest beacon is at x={isize}, y={isize}").unwrap())
+        .map(|line| {
+            sscanf!(
+                line,
+                "Sensor at x={isize}, y={isize}: closest beacon is at x={isize}, y={isize}"
+            )
+            .unwrap()
+        })
         .map(|(sx, sy, bx, by)| SBPair::from_ends(Point::from_xy(sx, sy), Point::from_xy(bx, by)))
         // .inspect(|sb| eprintln!("Parsed: {:?}", sb))
         // .inspect(|sb| {
@@ -244,7 +235,7 @@ pub fn run(input: &'static str) -> (usize, usize) {
     sb_map.sort_by(|a, b| (a.sensor.x + a.sensor.y).cmp(&(b.sensor.x + b.sensor.y)));
 
     // eprintln!("{xmn}, {xmx}, {ymn}, {ymx}");
-    
+
     (p1(&sb_map), p2(&sb_map))
 }
 
