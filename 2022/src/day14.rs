@@ -154,7 +154,7 @@ impl Map {
             })
             .collect::<Vec<char>>()
             .chunks(xmx - xmn)
-            .map(|ch| ch.into_iter().collect::<String>())
+            .map(|ch| ch.iter().collect::<String>())
             .join("\n");
         eprintln!("{map}");
     }

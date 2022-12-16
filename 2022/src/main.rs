@@ -13,6 +13,7 @@ mod day11;
 mod day12;
 mod day13;
 mod day14;
+#[rustfmt::skip]
 mod day15;
 
 fn fatal(s: &str) -> ! {

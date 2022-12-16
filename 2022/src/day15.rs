@@ -35,10 +35,6 @@ impl SBPair {
         }
     }
 
-    fn contains(&self, point: &Point) -> bool {
-        self.sensor.man_dist(point) <= self.man_dist
-    }
-
     fn points_on_hline(&self, y: isize) -> RangeInclusive<isize> {
         let overshoot = self.man_dist as isize - self.sensor.y.abs_diff(y) as isize;
         self.sensor.x - overshoot..=self.sensor.x + overshoot
@@ -48,12 +44,9 @@ impl SBPair {
         let overshoot = self.man_dist as isize - self.sensor.y.abs_diff(line) as isize;
         let start = point.max(self.sensor.x - overshoot);
         let end = self.sensor.x + overshoot;
-        // eprint!("points on hline {line} right of {point} for {:?} -> {} - ", self.sensor, self.man_dist);
         if start <= end {
-            // eprintln!("{start}..{end}");
             Some(start..=end)
         } else {
-            // eprintln!("None");
             None
         }
     }
@@ -62,12 +55,9 @@ impl SBPair {
         let overshoot = self.man_dist as isize - self.sensor.x.abs_diff(line) as isize;
         let start = point.max(self.sensor.y - overshoot);
         let end = self.sensor.y + overshoot;
-        // eprint!("points on vline {line} below    {point} for {:?} -> {} - ", self.sensor, self.man_dist);
         if start <= end {
-            // eprintln!("{start}..{end}");
             Some(start..=end)
         } else {
-            // eprintln!("None");
             None
         }
     }
@@ -93,23 +83,6 @@ fn p1(sb_map: &[SBPair]) -> usize {
         .flat_map(|sb| sb.points_on_hline(P1_HLINE))
         .collect::<HashSet<_>>()
         .len();
-
-    if cfg!(test) {
-        for y in 0..=20 {
-            for x in 0..=20 {
-                let point = Point { x, y };
-                eprint!(
-                    "{}",
-                    if sb_map.iter().any(|sb| sb.contains(&point)) {
-                        '.'
-                    } else {
-                        '#'
-                    }
-                )
-            }
-            eprintln!();
-        }
-    }
 
     points_on_hline - beacons_on_hline
 }
@@ -144,13 +117,19 @@ impl Ranges {
 fn p2(sb_map: &[SBPair]) -> usize {
     let (mut b_row, mut b_col): (Option<isize>, Option<isize>) = (None, None);
 
+    // Move along diagonal until...
     for d in 0..=P2_RANGE {
+
+        // ... we find a row/col which contains the beacon. But how?
         if b_row.is_some() && b_col.is_some() {
             break;
         }
+
+        // Start with a full range from diagonal till edge along row/col
         let mut row_occ = Ranges::from_range(d..=P2_RANGE);
         let mut col_occ = Ranges::from_range(d..=P2_RANGE);
 
+        // Then remove the points occupied by each sensor-beacon pair along given row/col
         for sb in sb_map {
             if let Some(r) = sb.points_on_hline_right_of(d, d) {
                 row_occ.remove(r);
@@ -161,47 +140,36 @@ fn p2(sb_map: &[SBPair]) -> usize {
             }
         }
 
+        // a row/col should be full consumed, or have no more than a single hole
         match (row_occ.ranges.len(), col_occ.ranges.len()) {
+            // no holes, next diagonal
             (0, 0) => continue,
+
+            // 1 hole on our row
             (1, 0) => {
-                let remainder = row_occ.ranges.pop().unwrap();
-                assert!(
-                    remainder.is_singleton(),
-                    "remaining region not a singleton: {:?}",
-                    remainder
-                );
-                (b_row, b_col) = (Some(remainder.into_iter().next().unwrap()), Some(d));
+                let hole = row_occ.ranges.pop().unwrap();
+                assert!( hole.is_singleton(), "remaining region not a singleton: {:?}", hole);
+                (b_row, b_col) = (Some(hole.into_iter().next().unwrap()), Some(d));
             }
+
+            // 1 hole on our col
             (0, 1) => {
-                let remainder = col_occ.ranges.pop().unwrap();
-                assert!(
-                    remainder.is_singleton(),
-                    "remaining region not a singleton: {:?}",
-                    remainder
-                );
-                (b_row, b_col) = (Some(d), Some(remainder.into_iter().next().unwrap()));
+                let hole = col_occ.ranges.pop().unwrap();
+                assert!( hole.is_singleton(), "remaining region not a singleton: {:?}", hole);
+                (b_row, b_col) = (Some(d), Some(hole.into_iter().next().unwrap()));
             }
+
+            // 1 hole on the diagonal
             (1, 1) => {
-                let row_rem = row_occ.ranges.pop().unwrap();
-                let col_rem = col_occ.ranges.pop().unwrap();
-                assert!(
-                    row_rem.is_singleton() && col_rem.is_singleton(),
-                    "remaining regions not singletons: {:?}, {:?}",
-                    row_rem,
-                    col_rem
-                );
-                assert_eq!(
-                    row_rem.into_iter().next().unwrap(),
-                    d,
-                    "row intersection is not along diagonal"
-                );
-                assert_eq!(
-                    col_rem.into_iter().next().unwrap(),
-                    d,
-                    "col intersection is not along diagonal"
-                );
+                let row_hole = row_occ.ranges.pop().unwrap();
+                let col_hole = col_occ.ranges.pop().unwrap();
+                assert!( row_hole.is_singleton() && col_hole.is_singleton(), "remaining regions not singletons: {:?}, {:?}", row_hole, col_hole);
+                assert_eq!( row_hole.into_iter().next().unwrap(), d, "row intersection is not along diagonal");
+                assert_eq!( col_hole.into_iter().next().unwrap(), d, "col intersection is not along diagonal");
                 (b_row, b_col) = (Some(d), Some(d));
             }
+
+            // more than 1 hole, invalid scenario
             (_, _) => panic!("Invalid number of ranges remaining"),
         }
     }
@@ -212,8 +180,7 @@ fn p2(sb_map: &[SBPair]) -> usize {
 }
 
 pub fn run(input: &'static str) -> (usize, usize) {
-    // let (mut xmn, mut xmx, mut ymn, mut ymx) = (0, 0, 0, 0);
-    let mut sb_map = input
+    let sb_map = input
         .lines()
         .map(|line| {
             sscanf!(
@@ -223,18 +190,7 @@ pub fn run(input: &'static str) -> (usize, usize) {
             .unwrap()
         })
         .map(|(sx, sy, bx, by)| SBPair::from_ends(Point::from_xy(sx, sy), Point::from_xy(bx, by)))
-        // .inspect(|sb| eprintln!("Parsed: {:?}", sb))
-        // .inspect(|sb| {
-        //     xmn = xmn.min(sb.sensor.x - sb.man_dist as isize);
-        //     xmx = xmx.max(sb.sensor.x + sb.man_dist as isize);
-        //     ymn = ymn.min(sb.sensor.y - sb.man_dist as isize);
-        //     ymx = ymx.max(sb.sensor.y + sb.man_dist as isize);
-        // })
         .collect::<Vec<_>>();
-
-    sb_map.sort_by(|a, b| (a.sensor.x + a.sensor.y).cmp(&(b.sensor.x + b.sensor.y)));
-
-    // eprintln!("{xmn}, {xmx}, {ymn}, {ymx}");
 
     (p1(&sb_map), p2(&sb_map))
 }
