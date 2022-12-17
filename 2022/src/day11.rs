@@ -1,5 +1,5 @@
 use sscanf::sscanf;
-use std::{collections::VecDeque, ops::Rem};
+use std::collections::VecDeque;
 
 type Test = Box<dyn Fn(usize) -> usize>;
 
@@ -22,20 +22,11 @@ impl Operation {
         }
     }
 
-    fn modulo_operate(&self, input: usize, divisor: usize) -> usize {
-        match self {
-            Operation::Add(n) => input.rem(divisor) + n.rem(divisor),
-            Operation::Mul(n) => input.rem(divisor) * n.rem(divisor),
-            Operation::Square => input.rem(divisor) * input.rem(divisor),
-        }
-        .rem(divisor)
-    }
-
     fn operate(&self, input: usize) -> usize {
         match self {
-            Operation::Add(n) => input + n,
-            Operation::Mul(n) => input * n,
-            Operation::Square => input * input,
+            Operation::Add(n) => input.saturating_add(*n),
+            Operation::Mul(n) => input.saturating_mul(*n),
+            Operation::Square => input.saturating_mul(input),
         }
     }
 }
@@ -75,15 +66,12 @@ impl Monkey {
     }
 
     fn throw(&mut self, relief: bool) -> Result<(usize, usize), ()> {
-        let item_worry = self.items.pop_front().ok_or(())?;
+        let old_worry = self.items.pop_front().ok_or(())?;
+        let relief = 3_usize.pow(relief as u32);
         self.inspections += 1;
-        let item_worry = if relief {
-            self.operation.operate(item_worry) / 3
-        } else {
-            self.operation.modulo_operate(item_worry, self.divisor)
-        };
-        let other = (self.test)(item_worry);
-        Ok((item_worry, other))
+        let new_worry = self.operation.operate(old_worry) / relief;
+        let other = (self.test)(new_worry);
+        Ok((new_worry, other))
     }
 
     fn catch(&mut self, item_worry: usize) {
@@ -92,18 +80,17 @@ impl Monkey {
 }
 
 pub fn run(input: &'static str) -> (usize, usize) {
+    let mut test_prod = 1;
     let mut monkeys: Vec<_> = input
         .split("\n\n")
         .map(Monkey::new)
-        // .inspect(|monkey| eprintln!("{:?}", monkey.items))
+        .inspect(|monkey| test_prod *= monkey.divisor)
         .collect();
 
     for _round in 1..=20 {
         for cur in 0..monkeys.len() {
-            // eprintln!("Round: {round}, Monkey: {cur}");
             while let Ok((item, other)) = monkeys[cur].throw(true) {
-                // eprintln!("\tThrowing {item} to monkey {other}");
-                monkeys[other].catch(item);
+                monkeys[other].catch(item % test_prod);
             }
         }
     }
@@ -111,9 +98,6 @@ pub fn run(input: &'static str) -> (usize, usize) {
     let (t2, t1) = monkeys
         .iter()
         .enumerate()
-        // .inspect(|(i, monkey)| {
-        //     eprintln!("Monkey {i}: ({}) - {:?}", monkey.inspections, monkey.items);
-        // })
         .fold((0, 0), |(t2, t1), (_, monkey)| {
             match (monkey.inspections > t2, monkey.inspections > t1) {
                 (true, true) => (t1, monkey.inspections),
@@ -121,15 +105,15 @@ pub fn run(input: &'static str) -> (usize, usize) {
                 _ => (t2, t1),
             }
         });
+
+    eprintln!("p1: {t1}, {t2}");
 
     let p1 = t2 * t1;
 
     for _round in 1..=10000 {
         for cur in 0..monkeys.len() {
-            // eprintln!("Round: {round}, Monkey: {cur}");
             while let Ok((item, other)) = monkeys[cur].throw(false) {
-                // eprintln!("\tThrowing {item} to monkey {other}");
-                monkeys[other].catch(item);
+                monkeys[other].catch(item % test_prod);
             }
         }
     }
@@ -137,9 +121,6 @@ pub fn run(input: &'static str) -> (usize, usize) {
     let (t2, t1) = monkeys
         .iter()
         .enumerate()
-        // .inspect(|(i, monkey)| {
-        //     eprintln!("Monkey {i}: ({}) - {:?}", monkey.inspections, monkey.items);
-        // })
         .fold((0, 0), |(t2, t1), (_, monkey)| {
             match (monkey.inspections > t2, monkey.inspections > t1) {
                 (true, true) => (t1, monkey.inspections),
@@ -147,6 +128,8 @@ pub fn run(input: &'static str) -> (usize, usize) {
                 _ => (t2, t1),
             }
         });
+
+    eprintln!("p2: {t1}, {t2}");
 
     (p1, t2 * t1)
 }
