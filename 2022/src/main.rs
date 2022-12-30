@@ -15,6 +15,7 @@ mod day13;
 mod day14;
 #[rustfmt::skip]
 mod day15;
+mod day18;
 
 fn fatal(s: &str) -> ! {
     eprintln!("{}", s);
@@ -26,6 +27,7 @@ fn main() {
         .nth(1)
         .and_then(|arg| arg.parse::<usize>().ok());
     let (p1, p2) = match arg {
+        Some(18) => day18::run(include_str!("../inputs/day18.txt")),
         Some(15) => day15::run(include_str!("../inputs/day15.txt")),
         Some(14) => day14::run(include_str!("../inputs/day14.txt")),
         Some(13) => day13::run(include_str!("../inputs/day13.txt")),
