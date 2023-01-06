@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Display, ops::Index, str::FromStr};
+use std::{fmt::Display, ops::{Index, IndexMut}, str::FromStr};
 
 #[derive(Default, PartialEq, Eq, Hash, Clone)]
 struct Position {
@@ -12,22 +12,29 @@ impl Display for Position {
     }
 }
 
+#[derive(Default)]
 struct Matrix<T>(Vec<Vec<T>>);
 
 #[derive(Default)]
 struct Grid {
-    grid: Vec<Vec<isize>>,
+    grid: Matrix<isize>,
     botright: Position,
     start: Position,
     end: Position,
-    scores: HashMap<Position, usize>,
+    scores: Matrix<usize>,
 }
 
-impl Index<&Position> for Grid {
-    type Output = isize;
+impl<T> Index<&Position> for Matrix<T> {
+    type Output = T;
 
     fn index(&self, index: &Position) -> &Self::Output {
-        &self.grid[index.row][index.col]
+        &self.0[index.row][index.col]
+    }
+}
+
+impl<T> IndexMut<&Position> for Matrix<T> {
+    fn index_mut(&mut self, index: &Position) -> &mut Self::Output {
+        &mut self.0[index.row][index.col]
     }
 }
 
@@ -65,12 +72,14 @@ impl FromStr for Grid {
             col: grid[0].len(),
         };
 
+        let scores = Matrix( vec![vec![ usize::MAX; botright.col]; botright.row]);
+
         Ok(Grid {
-            grid,
+            grid: Matrix(grid),
             botright,
             start,
             end,
-            ..Default::default()
+            scores,
         })
     }
 }
@@ -81,17 +90,21 @@ impl Grid {
         for row in 0..self.botright.row {
             for col in 0..self.botright.col {
                 let pos = Position { row, col };
-                // let pr = self.scores.get(&pos).map(|s| format!("{:4}", s).unwrap_or("    ".to_string()));
-                let pr = if self.scores.contains_key(&pos) {
-                    char::from_u32((self[&pos] + 'a' as isize - 1) as u32).unwrap_or(' ')
+                let pr = if self.scores[&pos] == usize::MAX {
+                    "    ".to_string()
                 } else {
-                    ' '
+                    format!("{:4}", self.scores[&pos])
                 };
+                // let pr = if self.scores[&pos] != usize::MAX {
+                //     char::from_u32((self.grid[&pos] + 'a' as isize - 1) as u32).unwrap_or(' ')
+                // } else {
+                //     ' '
+                // };
                 print!(" {}", pr);
             }
             println!();
         }
-        // std::thread::sleep(Duration::from_millis(50));
+        std::thread::sleep(std::time::Duration::from_millis(50));
     }
 
     fn neighbours(&self, curr: &Position) -> impl Iterator<Item = Position> {
@@ -111,27 +124,24 @@ impl Grid {
     }
 
     fn traverse(&mut self, curr: &Position) {
-        // self.print_scores();
+        self.print_scores();
         for neighbour in self.neighbours(&curr) {
-            let n_dist = self[&curr] - self[&neighbour];
-            if ![-1, 0, 1].contains(&n_dist) {
+            let n_dist = self.grid[&curr] - self.grid[&neighbour];
+            if ![0, 1].contains(&n_dist) {
                 continue;
             }
 
-            let curr_score = *self.scores.get(curr).unwrap();
-            if neighbour == self.start {
-                println!(
-                    "curr: {curr}({:03?}), neighbour: {neighbour}({:03?})",
-                    curr_score,
-                    curr_score + 1
-                );
-            }
-
+            let curr_score = self.scores[&curr];
             let neighbour_score = curr_score + 1;
-            self.scores
-                .entry(neighbour.clone())
-                .and_modify(|score| *score = neighbour_score.min(*score))
-                .or_insert(neighbour_score);
+            self.scores[&neighbour] = self.scores[&neighbour].min(neighbour_score);
+
+            // if neighbour == self.start {
+            //     println!(
+            //         "curr: {curr}({:03?}), neighbour: {neighbour}({:03?})",
+            //         curr_score,
+            //         self.scores[&neighbour]
+            //         );
+            // }
 
             if self.scores[&curr] < self.scores[&neighbour] {
                 self.traverse(&neighbour);
@@ -145,11 +155,10 @@ pub fn run(input: &'static str) -> (usize, usize) {
     let start = grid.start.clone();
     let end = grid.end.clone();
 
-    grid.scores.insert(end.clone(), 0);
+    grid.scores[&end] = 0;
     grid.traverse(&end);
-    // eprintln!("grid_size: {}, num_scores: {}", grid.rows * grid.cols, grid.scores.len());
 
-    let p1 = grid.scores.remove(&start).unwrap_or_default();
+    let p1 = grid.scores[&start];
 
     (p1, 0)
 }
