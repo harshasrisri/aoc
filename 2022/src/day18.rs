@@ -26,24 +26,34 @@ const RTN: Point = Point { x: 1, y: 1, z: 1 };
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 struct Side {
-    points: [Point; 4]
+    points: [Point; 4],
 }
 
 impl Side {
     fn offset_origin(mut self, origin: &Point) -> Side {
-        self.points
-            .iter_mut()
-            .for_each(|p| p.offset_origin(origin));
+        self.points.iter_mut().for_each(|p| p.offset_origin(origin));
         self
     }
 }
 
-const LFT: Side = Side { points: [ LBF, LTF, LBN, LTN ] };
-const RGT: Side = Side { points: [ RBF, RTF, RBN, RTN ] };
-const BOT: Side = Side { points: [ LBF, RBF, LBN, RBN ] };
-const TOP: Side = Side { points: [ LTF, RTF, LTN, RTN ] };
-const FAR: Side = Side { points: [ LBF, RBF, LTF, RTF ] };
-const NER: Side = Side { points: [ LBN, RBN, LTN, RTN ] };
+const LFT: Side = Side {
+    points: [LBF, LTF, LBN, LTN],
+};
+const RGT: Side = Side {
+    points: [RBF, RTF, RBN, RTN],
+};
+const BOT: Side = Side {
+    points: [LBF, RBF, LBN, RBN],
+};
+const TOP: Side = Side {
+    points: [LTF, RTF, LTN, RTN],
+};
+const FAR: Side = Side {
+    points: [LBF, RBF, LTF, RTF],
+};
+const NER: Side = Side {
+    points: [LBN, RBN, LTN, RTN],
+};
 
 #[derive(Debug)]
 struct Cube {
@@ -80,10 +90,8 @@ pub fn run(input: &'static str) -> (usize, usize) {
         .for_each(|side| {
             if exposed.contains(&side) {
                 exposed.remove(&side);
-                eprintln!("Hidden  side - {:?}", side);
             } else {
                 exposed.insert(side.clone());
-                eprintln!("Exposed side - {:?}", side);
             }
         });
 
@@ -107,5 +115,5 @@ fn test() {
 2,1,5
 2,3,5
 ";
-    assert_eq!(run(input), (64,0));
+    assert_eq!(run(input), (64, 0));
 }
