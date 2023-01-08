@@ -1,4 +1,8 @@
-use std::{fmt::Display, ops::{Index, IndexMut}, str::FromStr};
+use std::{
+    fmt::Display,
+    ops::{Index, IndexMut},
+    str::FromStr,
+};
 
 #[derive(Default, PartialEq, Eq, Hash, Clone)]
 struct Position {
@@ -72,7 +76,7 @@ impl FromStr for Grid {
             col: grid[0].len(),
         };
 
-        let scores = Matrix( vec![vec![ usize::MAX; botright.col]; botright.row]);
+        let scores = Matrix(vec![vec![usize::MAX; botright.col]; botright.row]);
 
         Ok(Grid {
             grid: Matrix(grid),
