@@ -18,7 +18,7 @@ enum Directions {
 impl Directions {
     fn from(input: &str) -> impl Iterator<Item = Directions> + '_ {
         Itertools::intersperse(
-            input.chars().cycle().map(|c| match c {
+            input.trim().chars().cycle().map(|c| match c {
                 '<' => Directions::Left,
                 '>' => Directions::Right,
                 c => panic!("invalid input - {c}"),
@@ -60,14 +60,32 @@ impl Chamber {
         self.tallest = self.tallest.max(*shape_tallest);
         self.space.extend(shape.points);
     }
+
+    fn print(&self, shape: &Shape) {
+        for row in (0..self.tallest + 7).rev() {
+            for col in 0..=8 {
+                let ch = match (row, col) {
+                    (0, 0) | (0, 8) => '+',
+                    (0, _) => '-',
+                    (_, 0) | (_, 8) => '|',
+                    (row, col) if shape.points.contains(&Point { row, col }) => '@',
+                    (row, col) if self.space.contains(&Point { row, col }) => '#',
+                    _ => '.',
+                };
+                eprint!("{ch}");
+            }
+            eprintln!();
+        }
+        eprintln!();
+    }
 }
 
 #[derive(Clone, PartialEq, Sequence)]
 enum ShapeType {
     HBar,
     Plus,
-    VBar,
     LeftL,
+    VBar,
     Square,
 }
 
@@ -220,6 +238,7 @@ pub fn run(input: &'static str) -> (usize, usize) {
     for shape_type in all::<ShapeType>().cycle().take(2022) {
         let mut shape = Shape::from_type_in_chamber(shape_type, &chamber);
         // shape.print();
+        // chamber.print(&shape);
         for dir in directions.by_ref() {
             shape = match dir {
                 Directions::Left => shape.move_left(&chamber),
@@ -232,6 +251,7 @@ pub fn run(input: &'static str) -> (usize, usize) {
                     }
                 },
             };
+            // chamber.print(&shape);
         }
     }
     (chamber.tallest, 0)
