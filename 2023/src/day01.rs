@@ -1,10 +1,7 @@
-fn soln(input: &str) -> usize {
-    input
-        .lines()
-        .map(|line| line.chars().filter(|c| c.is_digit(10)).collect::<Vec<_>>())
-        .map(|vc| vec![vc.first(), vc.last()].into_iter().filter_map(|opt| opt.cloned()).collect::<String>())
-        .filter_map(|ns| ns.parse::<usize>().ok())
-        .sum()
+fn solve_line(line: &str) -> Option<usize> {
+    let dig_vec = line.chars().filter(|c| c.is_ascii_digit()).collect::<Vec<_>>();
+    let num_str = vec![dig_vec.first(), dig_vec.last()].into_iter().filter_map(|opt| opt.cloned()).collect::<String>();
+    num_str.parse::<usize>().ok()
 }
 
 pub fn run(input: &'static str) -> (usize, usize) {
@@ -13,30 +10,22 @@ pub fn run(input: &'static str) -> (usize, usize) {
         .lines()
         .map(|line| {
             let mut line = line.to_string();
-            let left= digit_names
-                .iter()
-                .enumerate()
-                .filter_map(|(digit, name)| line.find(name).map(move |pos| (pos, digit)))
-                .min();
-
-            let right= digit_names
-                .iter()
-                .enumerate()
-                .filter_map(|(digit, name)| line.rfind(name).map(move |pos| (pos, digit)))
-                .max();
+            let left  = digit_names.iter().enumerate().filter_map(|(digit, name)| line.find(name).map(move |pos| (pos, digit))).min();
+            let right = digit_names.iter().enumerate().filter_map(|(digit, name)| line.rfind(name).map(move |pos| (pos, digit))).max();
 
             if let Some((pos, digit)) = left {
-                line.replace_range(pos..pos+1, &digit.to_string());
+                line.replace_range(pos..pos + 1, &digit.to_string());
             }
             if let Some((pos, digit)) = right {
-                line.replace_range(pos..pos+1, &digit.to_string());
+                line.replace_range(pos..pos + 1, &digit.to_string());
             }
             line
-        })
-        .collect::<Vec<_>>()
-        .join("\n");
+        });
 
-    (soln(input), soln(input_p2.as_str()))
+    (
+        input.lines().filter_map(solve_line).sum(), 
+        input_p2.filter_map(|line| solve_line(&line)).sum()
+    )
 }
 
 #[test]
