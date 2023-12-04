@@ -1,30 +1,44 @@
 fn solve_line(line: &str) -> Option<usize> {
-    let dig_vec = line.chars().filter(|c| c.is_ascii_digit()).collect::<Vec<_>>();
-    let num_str = vec![dig_vec.first(), dig_vec.last()].into_iter().filter_map(|opt| opt.cloned()).collect::<String>();
+    let dig_vec = line
+        .chars()
+        .filter(|c| c.is_ascii_digit())
+        .collect::<Vec<_>>();
+    let num_str = vec![dig_vec.first(), dig_vec.last()]
+        .into_iter()
+        .filter_map(|opt| opt.cloned())
+        .collect::<String>();
     num_str.parse::<usize>().ok()
 }
 
 pub fn run(input: &'static str) -> (usize, usize) {
-    let digit_names = [ "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine" ];
-    let input_p2 = input
-        .lines()
-        .map(|line| {
-            let mut line = line.to_string();
-            let left  = digit_names.iter().enumerate().filter_map(|(digit, name)| line.find(name).map(move |pos| (pos, digit))).min();
-            let right = digit_names.iter().enumerate().filter_map(|(digit, name)| line.rfind(name).map(move |pos| (pos, digit))).max();
+    let digit_names = [
+        "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+    ];
+    let input_p2 = input.lines().map(|line| {
+        let mut line = line.to_string();
+        let left = digit_names
+            .iter()
+            .enumerate()
+            .filter_map(|(digit, name)| line.find(name).map(move |pos| (pos, digit)))
+            .min();
+        let right = digit_names
+            .iter()
+            .enumerate()
+            .filter_map(|(digit, name)| line.rfind(name).map(move |pos| (pos, digit)))
+            .max();
 
-            if let Some((pos, digit)) = left {
-                line.replace_range(pos..pos + 1, &digit.to_string());
-            }
-            if let Some((pos, digit)) = right {
-                line.replace_range(pos..pos + 1, &digit.to_string());
-            }
-            line
-        });
+        if let Some((pos, digit)) = left {
+            line.replace_range(pos..pos + 1, &digit.to_string());
+        }
+        if let Some((pos, digit)) = right {
+            line.replace_range(pos..pos + 1, &digit.to_string());
+        }
+        line
+    });
 
     (
-        input.lines().filter_map(solve_line).sum(), 
-        input_p2.filter_map(|line| solve_line(&line)).sum()
+        input.lines().filter_map(solve_line).sum(),
+        input_p2.filter_map(|line| solve_line(&line)).sum(),
     )
 }
 
