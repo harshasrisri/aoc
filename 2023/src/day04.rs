@@ -10,14 +10,13 @@ use nom::{
 
 #[derive(Debug, Default)]
 struct Card {
-    id: usize,
     wins: HashSet<usize>,
     hits: HashSet<usize>,
 }
 
 impl Card {
     fn score(&self) -> usize {
-        let matches = self.wins.intersection(&self.hits).count();
+        let matches = self.matches();
         if matches >= 1 {
             2_usize.pow(matches as u32 - 1)
         } else {
@@ -25,8 +24,12 @@ impl Card {
         }
     }
 
+    fn matches(&self) -> usize {
+        self.wins.intersection(&self.hits).count()
+    }
+
     fn parse(input: &str) -> IResult<&str, Card> {
-        let (input, id) = terminated(
+        let (input, _id) = terminated(
             preceded(
                 tag("Card"), 
                 preceded(
@@ -55,18 +58,27 @@ impl Card {
             )
         )(input)?;
 
-        Ok((input, Card { id, wins: wins.into_iter().collect(),  hits: hits.into_iter().collect() }))
+        Ok((input, Card { wins: wins.into_iter().collect(),  hits: hits.into_iter().collect() }))
     }
 }
 
 pub fn run(input: &'static str) -> (usize, usize) {
-    let p1 = input
+    let (scores, matches): (Vec<usize>, Vec<usize>) = input
         .lines()
         .filter_map(|line| Card::parse(line).ok())
-        .map(|(_, card)| card.score())
-        .sum::<usize>();
+        .map(|(_, card)| (card.score(), card.matches()))
+        .unzip();
 
-    (p1, 0)
+    let mut num_cards = vec![1_usize; scores.len()];
+
+    for (id, score) in matches.iter().enumerate() {
+        let multiple = num_cards[id];
+        for offset in 0..*score {
+            num_cards[id + 1 + offset] += multiple;
+        }
+    }
+
+    (scores.into_iter().sum(), num_cards.into_iter().sum())
 }
 
 #[test]
@@ -79,5 +91,5 @@ Card 4: 41 92 73 84 69 | 59 84 76 51 58  5 54 83
 Card 5: 87 83 26 28 32 | 88 30 70 12 93 22 82 36
 Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11
 ";
-    assert_eq!(run(input), (13, 0));
+    assert_eq!(run(input), (13, 30));
 }
