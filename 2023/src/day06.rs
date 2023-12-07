@@ -5,11 +5,20 @@ pub fn run(input: &'static str) -> (usize, usize) {
     let (input, (_, times)) = terminated(tuple((tag("Time:"), many0(parse_number))), alt((line_ending, eof)))(input).unwrap();
     let (_, (_, distances)) = terminated(tuple((tag("Distance:"), many0(parse_number))), alt((line_ending, eof)))(input).unwrap();
 
-    let p1 = times.into_iter().zip(distances.into_iter())
-        .map(|(time, distance)| (0..=time).filter(|t| t * (time - t) > distance).count())
+    let p1 = times.iter().zip(distances.iter())
+        .map(|(&time, &distance)| (time, (0..=time).take_while(|t| t * (time - t) <= distance).count()))
+        .map(|(time, left)| time + 1 - (left * 2))
         .product::<usize>();
 
-    (p1, 0)
+    let time = times.into_iter().map(|n| n.to_string()).collect::<String>();
+    let time = time.parse::<usize>().unwrap();
+    let distance = distances.into_iter().map(|n| n.to_string()).collect::<String>();
+    let distance = distance.parse::<usize>().unwrap();
+
+    let left = (0..=time).take_while(|t| t * (time - t) <= distance).count();
+    let p2 = time + 1 - (left * 2);
+
+    (p1, p2)
 }
 
 #[test]
