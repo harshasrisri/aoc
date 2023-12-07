@@ -107,12 +107,11 @@ fn parse_almanac(input: &str) -> IResult<&str, Vec<usize>> {
 
 pub fn run(input: &'static str) -> (usize, usize) {
     let (input, seeds) = parse_almanac(input).unwrap();
-    println!("seeds: {seeds:?}");
     let (_, almanac) = Almanac::parse(input).unwrap();
 
     let p1 = seeds
-        .into_iter()
-        .map(|seed| almanac.to_soil(seed))
+        .iter()
+        .map(|seed| almanac.to_soil(*seed))
         .map(|soil| almanac.to_fert(soil))
         .map(|fert| almanac.to_watr(fert))
         .map(|watr| almanac.to_lght(watr))
@@ -121,7 +120,21 @@ pub fn run(input: &'static str) -> (usize, usize) {
         .map(|hmdt| almanac.to_locn(hmdt))
         .min().unwrap();
 
-    (p1, 0)
+    let p2 = seeds
+        .chunks(2)
+        .flat_map(|c| (c[0]..c[0]+c[1])
+            .into_iter()
+            .map(|seed| almanac.to_soil(seed))
+            .map(|soil| almanac.to_fert(soil))
+            .map(|fert| almanac.to_watr(fert))
+            .map(|watr| almanac.to_lght(watr))
+            .map(|lght| almanac.to_temp(lght))
+            .map(|temp| almanac.to_hmdt(temp))
+            .map(|hmdt| almanac.to_locn(hmdt))
+        )
+        .min().unwrap();
+
+    (p1, p2)
 }
 
 #[test]
@@ -161,5 +174,5 @@ humidity-to-location map:
 60 56 37
 56 93 4
 ";
-    assert_eq!(run(input), (35, 0));
+    assert_eq!(run(input), (35, 46));
 }
