@@ -1,10 +1,12 @@
-fn get_prediction(history: &[i32]) -> Option<i32> {
+fn get_prediction(history: &[i32]) -> (i32, i32) {
     let new_history = history.windows(2).map(|v| v[1] - v[0]).collect::<Vec<_>>();
-    let last = history.last();
+    let first = *history.first().unwrap();
+    let last = *history.last().unwrap();
     let ret = if new_history.iter().all(|val| *val == 0) {
-        last.copied()
+        (first, last)
     } else {
-        last.zip(get_prediction(&new_history)).map(|(l, p)| *l + p)
+        let (pf, pl) = get_prediction(&new_history);
+        (first - pf, last + pl)
     };
     ret
 }
@@ -15,12 +17,14 @@ pub fn run(input: &'static str) -> (usize, usize) {
         .map(|line| line.split(' ').filter_map(|val| val.parse().ok()).collect::<Vec<_>>())
         .collect::<Vec<_>>();
 
-    let p1 = histories
+    let (p2, p1) = histories
         .iter()
-        .filter_map(|hist| get_prediction(&hist))
-        .sum::<i32>();
+        .map(|hist| get_prediction(&hist))
+        .fold((0, 0), |(f_sum, l_sum), (first, last)| {
+            (f_sum + first, l_sum + last)
+        });
 
-    (p1 as usize, 0)
+    (p1 as usize, p2 as usize)
 }
 
 #[test]
