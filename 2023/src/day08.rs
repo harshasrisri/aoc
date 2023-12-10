@@ -1,25 +1,26 @@
 use std::collections::HashMap;
-
-use nom::{sequence::terminated, character::complete::not_line_ending, bytes::complete::tag, IResult};
-
-
-fn get_directions(input: &str) -> IResult<&str, &str> {
-    terminated(not_line_ending, tag("\n\n"))(input)
-}
+use num::integer::lcm;
 
 pub fn run(input: &'static str) -> (usize, usize) {
-    let (remaining, directions) = get_directions(input).unwrap();
-    let directions = directions.chars().map(|d| if d == 'L' { 0 } else { 1 }).collect::<Vec<usize>>();
-    let dir_map = remaining
+    let directions = input.lines().nth(0).unwrap().chars().map(|d| if d == 'L' { 0 } else { 1 }).collect::<Vec<usize>>();
+    let dir_map = input
         .lines()
+        .skip(2)
         .filter_map(|line| sscanf::sscanf!(line, "{str} = ({str}, {str})").ok())
         .map(|(src, lft, rgt)| (src, vec![lft, rgt]))
         .collect::<HashMap<_, _>>();
 
-    let mut cur = "AAA";
-    let p1_count = directions.iter().cycle().take_while(|d| { cur = dir_map[cur][**d]; cur != "ZZZ" }).count() + 1;
+    let get_count = |start, end: &str| -> usize {
+        let mut cur = start;
+        directions.iter().cycle().take_while(|d| { cur = dir_map[cur][**d]; !cur.ends_with(end) }).count() + 1
+    };
 
-    (p1_count, 0)
+    let p1 = dir_map.get("AAA").map(|_| get_count("AAA", "ZZZ")).unwrap_or_default();
+    let p2 = dir_map.keys().filter(|key| key.ends_with('A'))
+        .map(|&start| get_count(start, "Z"))
+        .fold(1, |cur_lcm, count| lcm(cur_lcm, count));
+
+    (p1, p2)
 }
 
 #[test]
