@@ -67,7 +67,7 @@ pub fn run(input: &'static str) -> (usize, usize) {
     let (input, seeds) = parse_almanac(input).unwrap();
     let (_, almanac) = Almanac::parse(input).unwrap();
     let p1 = seeds.iter().map(|seed| almanac.seed_to_locn(*seed)).min().unwrap();
-    let p2 = seeds.chunks(2).flat_map(|c| (c[0]..c[0]+c[1]).into_iter().map(|seed| almanac.seed_to_locn(seed))).min().unwrap();
+    let p2 = seeds.chunks(2).flat_map(|c| (c[0]..c[0]+c[1]).map(|seed| almanac.seed_to_locn(seed))).min().unwrap();
     
     (p1, p2)
 }

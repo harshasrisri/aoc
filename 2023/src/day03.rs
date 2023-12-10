@@ -20,15 +20,15 @@ fn surrounded_by_symbol(skip: usize, input: &Vec<Vec<char>>, row: usize, col: us
     let col_min = col.saturating_sub(1);
     let col_max = (input[row].len() - 1).min(col + skip);
 
-    for r in row_min..=row_max {
-        for c in col_min..=col_max {
+    for (r, row_vec) in input.iter().enumerate().take(row_max + 1).skip(row_min) {
+        for (c, item) in row_vec.iter().enumerate().take(col_max + 1).skip(col_min) {
             if r == row && c >= col && c < col + skip { continue; }
-            if input[r][c].is_ascii_punctuation() && input[r][c] != '.' {
+            if item.is_ascii_punctuation() && *item != '.' {
                 return Some((input[r][c], r, c))
             }
         }
     }
-    return None;
+    None
 }
 
 pub fn run(input: &'static str) -> (usize, usize) {

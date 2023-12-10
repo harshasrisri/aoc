@@ -1,8 +1,7 @@
 use std::collections::HashMap;
-use num::integer::lcm;
 
 pub fn run(input: &'static str) -> (usize, usize) {
-    let directions = input.lines().nth(0).unwrap().chars().map(|d| if d == 'L' { 0 } else { 1 }).collect::<Vec<usize>>();
+    let directions = input.lines().next().unwrap().chars().map(|d| if d == 'L' { 0 } else { 1 }).collect::<Vec<usize>>();
     let dir_map = input
         .lines()
         .skip(2)
@@ -18,7 +17,7 @@ pub fn run(input: &'static str) -> (usize, usize) {
     let p1 = dir_map.get("AAA").map(|_| get_count("AAA", "ZZZ")).unwrap_or_default();
     let p2 = dir_map.keys().filter(|key| key.ends_with('A'))
         .map(|&start| get_count(start, "Z"))
-        .fold(1, |cur_lcm, count| lcm(cur_lcm, count));
+        .fold(1, num::integer::lcm);
 
     (p1, p2)
 }
