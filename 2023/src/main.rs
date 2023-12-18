@@ -1,3 +1,4 @@
+#![feature(lazy_cell)]
 mod day01;
 mod day02;
 mod day03;
@@ -7,6 +8,7 @@ mod day06;
 mod day07;
 mod day08;
 mod day09;
+mod day10;
 mod day11;
 mod day14;
 mod day15;
@@ -30,6 +32,7 @@ fn main() {
         Some(7) => day07::run(include_str!("../inputs/day07.txt")),
         Some(8) => day08::run(include_str!("../inputs/day08.txt")),
         Some(9) => day09::run(include_str!("../inputs/day09.txt")),
+        Some(10) => day10::run(include_str!("../inputs/day10.txt")),
         Some(11) => day11::run(include_str!("../inputs/day11.txt")),
         Some(14) => day14::run(include_str!("../inputs/day14.txt")),
         Some(15) => day15::run(include_str!("../inputs/day15.txt")),
