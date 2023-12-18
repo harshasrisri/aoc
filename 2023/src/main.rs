@@ -10,6 +10,7 @@ mod day08;
 mod day09;
 mod day10;
 mod day11;
+mod day13;
 mod day14;
 mod day15;
 mod day16;
@@ -35,6 +36,7 @@ fn main() {
         Some(9) => day09::run(include_str!("../inputs/day09.txt")),
         Some(10) => day10::run(include_str!("../inputs/day10.txt")),
         Some(11) => day11::run(include_str!("../inputs/day11.txt")),
+        Some(13) => day13::run(include_str!("../inputs/day13.txt")),
         Some(14) => day14::run(include_str!("../inputs/day14.txt")),
         Some(15) => day15::run(include_str!("../inputs/day15.txt")),
         Some(16) => day16::run(include_str!("../inputs/day16.txt")),
