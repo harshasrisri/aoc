@@ -12,6 +12,7 @@ mod day10;
 mod day11;
 mod day14;
 mod day15;
+mod day16;
 
 fn fatal(s: &str) -> ! {
     eprintln!("{}", s);
@@ -36,6 +37,7 @@ fn main() {
         Some(11) => day11::run(include_str!("../inputs/day11.txt")),
         Some(14) => day14::run(include_str!("../inputs/day14.txt")),
         Some(15) => day15::run(include_str!("../inputs/day15.txt")),
+        Some(16) => day16::run(include_str!("../inputs/day16.txt")),
         Some(arg) => fatal(format!("Day {} - Not implemented", arg).as_str()),
         None => fatal("Invalid argument. Pass a number corresponding to the day."),
     };
