@@ -47,12 +47,10 @@ fn rules() -> &'static Rules {
 
 fn beam(input: &[Vec<char>], row: usize, col: usize, heading: Heading, visited: &mut HashSet<(usize, usize, Heading)>) -> Option<()> {
     if !visited.insert((row, col, heading)) {
-        // println!("{row}, {col}, {}, {heading:?} - visited", input[row][col]);
         return Some(());
     }
 
     for next_heading in rules().get(&input[row][col])?.get(&heading)?.iter() {
-        // println!("{row}, {col}, {}, {heading:?}, {next_heading:?}", input[row][col]);
         let (next_row, next_col) = match next_heading {
             Heading::South => (Some(row + 1), Some(col)),
             Heading::North => (row.checked_sub(1), Some(col)),
@@ -60,7 +58,7 @@ fn beam(input: &[Vec<char>], row: usize, col: usize, heading: Heading, visited: 
             Heading::West => (Some(row), col.checked_sub(1)),
         };
         if let Some((next_row, next_col)) = next_row.zip(next_col) {
-            if let Some(_) = input.get(next_row).and_then(|r| r.get(next_col)) {
+            if input.get(next_row).and_then(|r| r.get(next_col)).is_some() {
                 beam(input, next_row, next_col, *next_heading, visited)?;
             }
         }
@@ -68,17 +66,25 @@ fn beam(input: &[Vec<char>], row: usize, col: usize, heading: Heading, visited: 
     Some(())
 }
 
+fn illumination(input: &[Vec<char>], row: usize, col: usize, heading: Heading) -> usize {
+    let mut visited = HashSet::new();
+    beam(input, row, col, heading, &mut visited);
+    visited.iter().map(|(row, col, _)| (row, col)).collect::<HashSet<_>>().len()
+}
+
 pub fn run(input: &'static str) -> (usize, usize) {
     let input = input.trim().lines()
         .map(|line| line.chars().collect::<Vec<_>>())
         .collect::<Vec<_>>();
 
-    let mut visited = HashSet::new();
-    beam(&input, 0, 0, Heading::East, &mut visited);
+    let p2 = (0..input[0].len()).map(|col| (0, col, Heading::South))
+        .chain((0..input[0].len()).map(|col| (input.len() - 1, col, Heading::North)))
+        .chain((0..input.len()).map(|row| (row, 0, Heading::East)))
+        .chain((0..input.len()).map(|row| (row, input[0].len() - 1, Heading::West)))
+        .map(|(row, col, heading)| illumination(&input, row, col, heading))
+        .max().unwrap();
 
-    let p1 = visited.iter().map(|(row, col, _)| (row, col)).collect::<HashSet<_>>().len();
-
-    (p1, 0)
+    (illumination(&input, 0, 0, Heading::East), p2)
 }
 
 #[test]
@@ -95,5 +101,5 @@ fn test1() {
 .|....-|.\
 ..//.|....
 ";
-    assert_eq!(run(input), (46, 0));
+    assert_eq!(run(input), (46, 51));
 }
